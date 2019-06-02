@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Entities;
+﻿using Unity.Entities;
 using UnityEngine;
 using WDIB.Components;
 using WDIB.Factory;
@@ -10,10 +7,68 @@ using WDIB.Systems;
 
 namespace WDIB.Utilities
 {
+    #region HitType Structs and Enums
+    public struct HitHandlerData
+    {
+        public Entity entity;
+        public RaycastHit hit;
+        public HitType hitType;
+        public uint projectileID;
+    }
+
+    public struct ExplosiveHitHandlerData
+    {
+        public uint ID;
+        public Collider collider;
+    }
+
+    public enum HitType
+    {
+        SingleHit,
+        MultiHit
+    }
+    #endregion
+
+    public abstract class BaseHitHandler
+    {
+        public BaseHitHandler()
+        {
+            HitHandlerSystem.onHitProcessed += OnHit;
+            HitHandlerSystem.onExplosiveHitProcessed += OnExplosiveHit;
+        }
+
+        private void OnHit(HitHandlerData hitData)
+        {
+            switch (hitData.hitType)
+            {
+                case HitType.SingleHit:
+                    SingleHit(hitData);
+                    break;
+                case HitType.MultiHit:
+                    MultiHit(hitData);
+                    break;
+            }
+        }
+
+        public abstract void OnExplosiveHit(ExplosiveHitHandlerData hitData);
+        public abstract void SingleHit(HitHandlerData hitData);
+        public abstract void MultiHit(HitHandlerData hitData);
+    }
+
+
+
+
     public static class HitHandlerSystem
     {
         private static EntityManager eManager;
         private static WeaponParameters wParameters;
+
+        #region Delegates
+        public delegate void HitProcessedEvent(HitHandlerData hitData);
+        public static HitProcessedEvent onHitProcessed;
+        public delegate void ExplosiveHitProcessedEvent(ExplosiveHitHandlerData hitData);
+        public static ExplosiveHitProcessedEvent onExplosiveHitProcessed;
+        #endregion
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
@@ -34,28 +89,18 @@ namespace WDIB.Utilities
         public static void OnHitSystemEvent(ECSHitData[] hitData)
         {
             RaycastHit hit;
-            uint attackerID;
             Entity entity;
             ProjectileData data;
+            HitHandlerData hitHandlerData;
             for (int i = 0; i < hitData.Length; i++)
             {
-                // check if its the right thing to do damage, spawn impact effects, etc
                 entity = hitData[i].entity;
                 hit = hitData[i].hit;
                 data = wParameters.GetProjectileDataByID((int)eManager.GetComponentData<ProjectileID>(entity).ID);
 
-                // get id and spawn explosion if we are supposed to
-                attackerID = eManager.GetComponentData<Owner>(entity).ID;
-                if (eManager.HasComponent<Explosive>(entity))
-                {
-                    Explosive explosive = eManager.GetComponentData<Explosive>(entity);
-                    ExplosiveFactory.CreateExplosive((int)explosive.ID, hit.point, attackerID);
-                }
+                hitHandlerData = new HitHandlerData { entity = entity, hit = hit, hitType = HitType.SingleHit, projectileID = eManager.GetComponentData<ProjectileID>(entity).ID };
 
-                TryToApplyDamage();
-                TryToApplyForce();
-
-                DestroyEntity(ref entity);
+                onHitProcessed?.Invoke(hitHandlerData);
             }
         }
 

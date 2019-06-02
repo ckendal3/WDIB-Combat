@@ -47,6 +47,12 @@ namespace WDIB.Factory
         /// <param name="spawnAmount"></param>
         public static void CreateProjectiles(int projectileID, float3 spawnPos, quaternion spawnRot, uint ownerID)
         {
+            // -------------------
+            // create visuals here
+            // Make new method ---
+            // -------------------
+
+
             #if UNITY_EDITOR
             if (debugGroupID > 65000)
             {
