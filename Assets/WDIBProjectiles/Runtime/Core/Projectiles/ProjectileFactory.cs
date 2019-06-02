@@ -25,7 +25,7 @@ namespace WDIB.Factory
         static int debugIndividualID = 0;
         #endif
 
-        public static void Initialize()
+        static ProjectileFactory()
         {
             eManager = World.Active.EntityManager;
 
@@ -55,9 +55,6 @@ namespace WDIB.Factory
             debugGroupID += 1;
             debugIndividualID = 0;
             #endif
-            
-            // need to do this just on construction
-            Initialize();
 
             SetComponents(projectileID, spawnPos, spawnRot, wParameters.GetProjectileDataByID(projectileID), ownerID);
         }

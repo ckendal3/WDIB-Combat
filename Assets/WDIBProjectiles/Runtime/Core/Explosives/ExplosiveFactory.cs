@@ -19,7 +19,7 @@ namespace WDIB.Factory
         static int debugGroupID = 0;
         #endif
 
-        private static void Initialize()
+        static ExplosiveFactory()
         {
             eManager = World.Active.EntityManager;
 
@@ -42,8 +42,6 @@ namespace WDIB.Factory
             #if UNITY_EDITOR
             debugGroupID += 1;
             #endif
-
-            Initialize();
 
             SetComponents(explosiveID, spawnPos, weaponParameters.GetExplosiveDataByID(explosiveID), ownerID);
         }

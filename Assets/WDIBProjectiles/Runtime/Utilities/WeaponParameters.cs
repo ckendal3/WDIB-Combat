@@ -17,14 +17,14 @@ namespace WDIB.Parameters
         private ProjectileData[] projectileSet = null;
 
         [SerializeField]
-        private LayerMask projectileHitLayers;
+        private LayerMask projectileHitLayers = 1 << 0;
 
         [Header("Explosives")]
         [SerializeField]
         private ExplosiveData[] explosiveSet = null;
 
         [SerializeField]
-        private LayerMask explosiveHitLayers;
+        private LayerMask explosiveHitLayers = 1 << 0;
 
 
 #if UNITY_EDITOR
