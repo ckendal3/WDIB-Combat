@@ -34,3 +34,5 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+/Assets/EntityCache.meta
+/Assets/EntityCache/Resources.meta
