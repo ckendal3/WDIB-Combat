@@ -18,15 +18,15 @@ MonoBehaviour:
   damage: 10
   speed: 10
   spread:
-    minimumSpread: -0.09
-    maximumSpread: 0.19
+    minimumSpread: -0.177
+    maximumSpread: 0.177
   mesh: {fileID: 2298794039524342105, guid: 98401a8b6f876ed4ebdd395ad4cfccaf, type: 3}
   material: {fileID: 5629084884208175553, guid: 98401a8b6f876ed4ebdd395ad4cfccaf,
     type: 3}
   componentData:
-  - componentType: 1
+  - componentType: 5
     floatValue: 1
     intValue: 2
-  - componentType: 5
+  - componentType: 1
     floatValue: 1
     intValue: 2

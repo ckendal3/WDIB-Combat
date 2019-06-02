@@ -7,68 +7,10 @@ using WDIB.Systems;
 
 namespace WDIB.Utilities
 {
-    #region HitType Structs and Enums
-    public struct HitHandlerData
-    {
-        public Entity entity;
-        public RaycastHit hit;
-        public HitType hitType;
-        public uint projectileID;
-    }
-
-    public struct ExplosiveHitHandlerData
-    {
-        public uint ID;
-        public Collider collider;
-    }
-
-    public enum HitType
-    {
-        SingleHit,
-        MultiHit
-    }
-    #endregion
-
-    public abstract class BaseHitHandler
-    {
-        public BaseHitHandler()
-        {
-            HitHandlerSystem.onHitProcessed += OnHit;
-            HitHandlerSystem.onExplosiveHitProcessed += OnExplosiveHit;
-        }
-
-        private void OnHit(HitHandlerData hitData)
-        {
-            switch (hitData.hitType)
-            {
-                case HitType.SingleHit:
-                    SingleHit(hitData);
-                    break;
-                case HitType.MultiHit:
-                    MultiHit(hitData);
-                    break;
-            }
-        }
-
-        public abstract void OnExplosiveHit(ExplosiveHitHandlerData hitData);
-        public abstract void SingleHit(HitHandlerData hitData);
-        public abstract void MultiHit(HitHandlerData hitData);
-    }
-
-
-
-
     public static class HitHandlerSystem
     {
         private static EntityManager eManager;
         private static WeaponParameters wParameters;
-
-        #region Delegates
-        public delegate void HitProcessedEvent(HitHandlerData hitData);
-        public static HitProcessedEvent onHitProcessed;
-        public delegate void ExplosiveHitProcessedEvent(ExplosiveHitHandlerData hitData);
-        public static ExplosiveHitProcessedEvent onExplosiveHitProcessed;
-        #endregion
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
@@ -91,16 +33,17 @@ namespace WDIB.Utilities
             RaycastHit hit;
             Entity entity;
             ProjectileData data;
-            HitHandlerData hitHandlerData;
             for (int i = 0; i < hitData.Length; i++)
             {
                 entity = hitData[i].entity;
                 hit = hitData[i].hit;
                 data = wParameters.GetProjectileDataByID((int)eManager.GetComponentData<ProjectileID>(entity).ID);
 
-                hitHandlerData = new HitHandlerData { entity = entity, hit = hit, hitType = HitType.SingleHit, projectileID = eManager.GetComponentData<ProjectileID>(entity).ID };
+                //-------------------------------------------------
+                // Hit Logic Goes Here ----------------------------
+                // ------------------------------------------------
 
-                onHitProcessed?.Invoke(hitHandlerData);
+                Debug.Log("HIT");
             }
         }
 
@@ -113,7 +56,6 @@ namespace WDIB.Utilities
             uint attackerID;
             RaycastHit hit;
             Entity entity;
-
             // for every projectile 
             for (int i = 0; i < hitData.Length; i++)
             {
@@ -127,7 +69,14 @@ namespace WDIB.Utilities
                 for (int j = 0; j < hitData[i].hits.Length; j++)
                 {
                     hit = hitData[i].hits[j];
-                    if(canExplode)
+
+                    //-------------------------------------------------
+                    // Hit Logic Goes Here ----------------------------
+                    // ------------------------------------------------
+
+                    Debug.Log("MULTI-HIT");
+
+                    if (canExplode)
                     {
                         AddExplosion(ref entity, hit.point, attackerID);
                     }
@@ -135,11 +84,10 @@ namespace WDIB.Utilities
                     #region Multi-Hit
                     mHit = eManager.GetComponentData<MultiHit>(entity);
                     eManager.SetComponentData(entity, new MultiHit { hits = mHit.hits + 1, maxHits = mHit.maxHits });
-                    if (mHit.hits >= mHit.maxHits)
-                    {
-                        eManager.SetComponentData(entity, new Distance { Value = 10000f, MaxDistance = 0 });
-                        break;
-                    }
+
+                    // need to check what type of hit it is and check if it needs to be destroyed
+                    // aka Player hit it continues - but environmental hit it stops
+
                     #endregion
 
                     TryToApplyDamage();
@@ -161,6 +109,12 @@ namespace WDIB.Utilities
                 for (int j = 0; j < data.colliders.Length; j++)
                 {
                     collider = data.colliders[j];
+
+                    //-------------------------------------------------
+                    // Hit Logic Goes Here ----------------------------
+                    // ------------------------------------------------
+
+                    Debug.Log("EXPLOSION-HIT");
 
                     TryToApplyDamage();
                     TryToApplyForce();

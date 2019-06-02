@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalMaximumProjectileRange: 5000
   projectileSet: []
-  ProjectileHitLayers:
+  projectileHitLayers:
     serializedVersion: 2
     m_Bits: 4294967295
   explosiveSet: []
-  ExplosiveHitLayers:
+  explosiveHitLayers:
     serializedVersion: 2
     m_Bits: 4294967295
   defaultExplosive: {fileID: 11400000, guid: 414294173d7aee94c84fc8857465ac52, type: 2}

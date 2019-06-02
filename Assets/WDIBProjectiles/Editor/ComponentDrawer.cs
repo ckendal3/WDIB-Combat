@@ -27,7 +27,7 @@ namespace WDIB.Editor
                     floatProperty.floatValue = EditorGUILayout.Slider("Multiplier", floatProperty.floatValue, 1, 5);
                     break;
                 case EComponentType.MultiHit:
-                    intProperty.intValue = EditorGUILayout.IntSlider("Max Hit Count", intProperty.intValue, 1, 40);
+                    intProperty.intValue = EditorGUILayout.IntSlider("Max Hit Count", intProperty.intValue, 2, 40);
                     break;
                 case EComponentType.EMP:
                     Debug.LogWarning("EMP component is not implemented");
