@@ -14,6 +14,7 @@ public class ExplosiveSystem : JobComponentSystem
     private Collider[] colliders;
 
     private WeaponParameters wParameters;
+    private LayerMask hitMask;
 
     private EntityQuery m_explosiveGroup;
 
@@ -59,23 +60,29 @@ public class ExplosiveSystem : JobComponentSystem
 
             // if we have hits
             ECSExplosiveData ecsData;
-            int hitCount = Physics.OverlapSphereNonAlloc(positions[i].Value, data.radius, colliders, wParameters.GetExplosiveHitLayer());
+            int hitCount = Physics.OverlapSphereNonAlloc(positions[i].Value, data.radius, colliders, hitMask);
             if (hitCount > 0)
             {
                 explosiveHits = new List<Collider>();
                 ecsData = new ECSExplosiveData { explosiveID = explosiveId };
 
+                // Do a batch raycast to all hits and filter out all overlapping colliders that 
+                // aren't hit first - so raycast to an overlapped object and make sure there isn't
+                // a wall inbetween them and the explosion
+
                 // for every hit we have
                 for (int j = 0; j < colliders.Length; j++)
                 {
-                    if(colliders[j] != null)
+                    // if we have a null collider - every collider after should be null as well
+                    if (colliders[j] == null)
                     {
-                        explosiveHits.Add(colliders[j]);
+                        break;
                     }
+
+                    explosiveHits.Add(colliders[j]);
                 }
 
-                // may be unneeded
-                // if we have hits, add it to the main array
+                // if we have hits, add it to the main array - may be an unneeded check
                 if(explosiveHits.Count > 0)
                 {
                     ecsData.colliders = explosiveHits.ToArray();
@@ -104,9 +111,10 @@ public class ExplosiveSystem : JobComponentSystem
 
     protected override void OnCreate()
     {
-        wParameters = WeaponParameters.Instance;
-
         eManager = World.Active.EntityManager;
+
+        wParameters = WeaponParameters.Instance;
+        hitMask = wParameters.GetExplosiveHitLayer();
 
         colliders = new Collider[32];
 

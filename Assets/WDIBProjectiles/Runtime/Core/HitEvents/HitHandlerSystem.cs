@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using Unity.Collections;
+using Unity.Entities;
 using UnityEngine;
 using WDIB.Components;
 using WDIB.Factory;
@@ -25,74 +26,64 @@ namespace WDIB.Utilities
         }
 
         /// <summary>
-        /// The delegate only returns hits with non-null colliders
+        /// The delegate only returns hits with non-null colliders and deals with one projectile's hit at a time.
         /// </summary>
         /// <param name="hitData"></param>
-        public static void OnHitSystemEvent(ECSHitData[] hitData)
+        public static void OnHitSystemEvent(HitHandlerData handlerData, RaycastHit hit)
+        {
+            ProjectileData data = wParameters.GetProjectileDataByID((int)eManager.GetComponentData<ProjectileID>(handlerData.entity).ID);
+
+            //-------------------------------------------------
+            // Hit Logic Goes Here ----------------------------
+            // ------------------------------------------------
+
+            //Debug.Log("HIT");
+
+            
+            TryToApplyDamage();
+            TryToApplyForce();
+            CreateHitVisual();
+
+            DestroyEntity(ref handlerData.entity);
+
+        }
+
+        /// <summary>
+        /// The delegate only returns hits with non-null colliders and deals with one projectile's sets of hits at a time.
+        /// </summary>
+        /// <param name="hitData"></param>
+        public static void OnMultiHitSystemEvent(HitHandlerData ecsData, NativeArray<RaycastHit> hitData)
         {
             RaycastHit hit;
-            Entity entity;
-            ProjectileData data;
+            Entity entity = ecsData.entity;
+            bool canExplode = eManager.HasComponent<Explosive>(entity);
+            MultiHit multiComponent = eManager.GetComponentData<MultiHit>(entity);
+            uint attackerID = eManager.GetComponentData<Owner>(entity).ID;
+
+            // for every hit
             for (int i = 0; i < hitData.Length; i++)
             {
-                entity = hitData[i].entity;
-                hit = hitData[i].hit;
-                data = wParameters.GetProjectileDataByID((int)eManager.GetComponentData<ProjectileID>(entity).ID);
+                hit = hitData[i];
 
                 //-------------------------------------------------
                 // Hit Logic Goes Here ----------------------------
                 // ------------------------------------------------
 
-                Debug.Log("HIT");
-            }
-        }
+                //Debug.Log("MULTI-HIT");
 
-        /// <summary>
-        /// The delegate only returns hits with non-null colliders
-        /// </summary>
-        /// <param name="hitData"></param>
-        public static void OnMultiHitSystemEvent(ECSMultiHitData[] hitData)
-        {
-            uint attackerID;
-            RaycastHit hit;
-            Entity entity;
-            // for every projectile 
-            for (int i = 0; i < hitData.Length; i++)
-            {
-                entity = hitData[i].entity;
-                attackerID = eManager.GetComponentData<Owner>(entity).ID;
-
-                bool canExplode = eManager.HasComponent<Explosive>(entity);
-
-                // for every hit from this projectile
-                MultiHit mHit;
-                for (int j = 0; j < hitData[i].hits.Length; j++)
+                if (canExplode)
                 {
-                    hit = hitData[i].hits[j];
-
-                    //-------------------------------------------------
-                    // Hit Logic Goes Here ----------------------------
-                    // ------------------------------------------------
-
-                    Debug.Log("MULTI-HIT");
-
-                    if (canExplode)
-                    {
-                        AddExplosion(ref entity, hit.point, attackerID);
-                    }
-
-                    #region Multi-Hit
-                    mHit = eManager.GetComponentData<MultiHit>(entity);
-                    eManager.SetComponentData(entity, new MultiHit { hits = mHit.hits + 1, maxHits = mHit.maxHits });
-
-                    // need to check what type of hit it is and check if it needs to be destroyed
-                    // aka Player hit it continues - but environmental hit it stops
-
-                    #endregion
-
-                    TryToApplyDamage();
-                    TryToApplyForce();
+                    AddExplosion(ref entity, hit.point, attackerID);
                 }
+                
+                eManager.SetComponentData(entity, new MultiHit { hits = multiComponent.hits + 1, maxHits = multiComponent.maxHits });
+                // need to check what type of hit it is and check if it needs to be destroyed
+                // aka Player hit it continues - but environmental hit it stops
+
+                
+                TryToApplyDamage();
+                TryToApplyForce();
+                CreateHitVisual();
             }
         }
 
@@ -114,10 +105,12 @@ namespace WDIB.Utilities
                     // Hit Logic Goes Here ----------------------------
                     // ------------------------------------------------
 
-                    Debug.Log("EXPLOSION-HIT");
+                    //Debug.Log("EXPLOSION-HIT");
 
+                    
                     TryToApplyDamage();
                     TryToApplyForce();
+                    CreateHitVisual();
                 }
 
             }
@@ -127,12 +120,23 @@ namespace WDIB.Utilities
         {
             //float damage = eManager.GetComponentData<Damage>(entity).Value;
 
-            Debug.LogWarning("Applying damage is not implemented yet.");
+            //Debug.LogWarning("Applying damage is not implemented yet.");
         }
 
         private static void TryToApplyForce() //ref Entity entity, Collider collider
         {
-            Debug.LogWarning("Applying force is not implemented yet.");
+            //Debug.LogWarning("Applying force is not implemented yet.");
+        }
+
+        private static void CreateHitVisual()
+        {
+            // Implement visual hit logic here
+        }
+
+        private static void CreateHitVisual(int visualsID, RaycastHit hit)
+        {
+            // Implement visual hit logic here
+            VisualHitParameters.Instance.GetHitVFXDataByType(visualsID, MaterialType.Dirt); // MaterialType.Dirt should be gathered from the hit
         }
 
         private static void AddExplosion(ref Entity entity, Vector3 hitPoint, uint attackerID)
@@ -148,25 +152,16 @@ namespace WDIB.Utilities
 
     }
 
-    public struct ECSHitData
+    public struct HitHandlerData
     {
         public Entity entity;
         public uint projectileID;
-
-        public RaycastHit hit;
+        public uint ownerID;
     }
 
     public struct ECSExplosiveData
     {
         public int explosiveID; // the explosion data
         public Collider[] colliders; // all the things this explosion hit
-    }
-
-    public struct ECSMultiHitData
-    {
-        public Entity entity;
-        public uint projectileID;
-
-        public RaycastHit[] hits;
     }
 }

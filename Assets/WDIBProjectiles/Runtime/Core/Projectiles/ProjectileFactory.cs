@@ -7,6 +7,8 @@ using Unity.Transforms;
 using WDIB.Components;
 using UnityEngine;
 using Random = Unity.Mathematics.Random;
+using Unity.Burst;
+using Unity.Jobs;
 
 namespace WDIB.Factory
 {
@@ -146,23 +148,43 @@ namespace WDIB.Factory
             }
         }
 
+        [BurstCompile]
         private static void GetConeOfFire(ProjectileData data, quaternion rotation, int count, out NativeArray<quaternion> rSpreads)
         {
             rSpreads = new NativeArray<quaternion>(count, Allocator.TempJob);
 
-            random = new Unity.Mathematics.Random(34377 * (uint)System.Environment.TickCount);
-
-            float3 deviation;
-
-            for (int i = 0; i < count; i++)
+            var coneOfFireJob = new CreateConeOfFireJob
             {
-                deviation = new float3(random.NextFloat(data.spread.minimumSpread, data.spread.maximumSpread),
-                               random.NextFloat(data.spread.minimumSpread, data.spread.maximumSpread),
-                               random.NextFloat(data.spread.minimumSpread, data.spread.maximumSpread));
+                spreads = rSpreads,
+                baseRot = rotation,
+                random = new Random(34377 * (uint)System.Environment.TickCount),
+                spreadAmounts = new float2(data.spread.minimumSpread, data.spread.maximumSpread)
+            }.Schedule(count, 32);
 
-                rSpreads[i] = math.mul(rotation, quaternion.Euler(deviation));
+            coneOfFireJob.Complete();
+        }
+
+        [BurstCompile]
+        public struct CreateConeOfFireJob : IJobParallelFor
+        {
+            [WriteOnly]
+            public NativeArray<quaternion> spreads;
+
+            [ReadOnly] public quaternion baseRot;
+            [ReadOnly] public Random random;
+
+            [ReadOnly] public float2 spreadAmounts;
+
+            public void Execute(int index)
+            {
+                float3 deviation = new float3(random.NextFloat(spreadAmounts.x, spreadAmounts.y),
+                                   random.NextFloat(spreadAmounts.x, spreadAmounts.y),
+                                   random.NextFloat(spreadAmounts.x, spreadAmounts.y));
+
+                spreads[index] = math.mul(baseRot, quaternion.Euler(deviation));
             }
         }
+
 
         /// <summary>
         /// Retrieve the components specified in the data and add them to the projectiles
@@ -192,7 +214,7 @@ namespace WDIB.Factory
                     eManager.AddComponentData(entity, (Explosive)data.GetComponentData());
                     return;
                 case EComponentType.NotImplemented:
-                    Debug.Log("Not yet immplemented/");
+                    Debug.Log("Not yet immplemented.");
                     return;
             }
         }

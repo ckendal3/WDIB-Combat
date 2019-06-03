@@ -18,8 +18,9 @@ namespace WDIB.Systems
         private EntityManager eManager;
 
         private WeaponParameters wParameters;
+        private LayerMask hitMask;
 
-        public delegate void HitSystemEvent(ECSHitData[] hitData);
+        public delegate void HitSystemEvent(HitHandlerData handlerData, RaycastHit hit);
         public static HitSystemEvent onHitSystemFinish;
 
         [BurstCompile]
@@ -42,7 +43,8 @@ namespace WDIB.Systems
                     from = prevPositions[index].Value,
                     direction = math.forward(rotations[index].Value),
                     distance = math.distance(prevPositions[index].Value, curPositions[index].Value),
-                    layerMask = hitMask
+                    layerMask = hitMask,
+                    maxHits = 1
                 };
             }
         }
@@ -71,20 +73,16 @@ namespace WDIB.Systems
             NativeArray<Entity> entities = m_DetectHitGroup.ToEntityArray(Allocator.TempJob, out JobHandle entitiesHandle);
             entitiesHandle.Complete();
 
-            // Used for the delegate
-            NativeList<ECSHitData> tempHitData = new NativeList<ECSHitData>(0, Allocator.TempJob);
-
             #region Default Physics
             // Try using batch raycasting
             UnityEngine.Ray ray;
             UnityEngine.RaycastHit hit;
 
             // for every hit
-            ECSHitData tmpData;
-            uint projectileID;
+            HitHandlerData handlerData;
             for (int i = 0; i < commands.Length; i++)
             {
-                ray = new UnityEngine.Ray(commands[i].from, commands[i].direction);
+                ray = new Ray(commands[i].from, commands[i].direction);
 
                 if (Physics.Raycast(ray, out hit, commands[i].distance, commands[i].layerMask))
                 {
@@ -94,27 +92,18 @@ namespace WDIB.Systems
                         continue;
                     }
 
-                    projectileID = eManager.GetComponentData<ProjectileID>(entities[i]).ID;
-
-                    tmpData = new ECSHitData
+                    handlerData = new HitHandlerData
                     {
-                        hit = hit,
                         entity = entities[i],
-                        projectileID = projectileID
+                        projectileID = eManager.GetComponentData<ProjectileID>(entities[i]).ID,
+                        ownerID = eManager.GetComponentData<Owner>(entities[i]).ID
                     };
 
-                    tempHitData.Add(tmpData);
+                    onHitSystemFinish?.Invoke(handlerData, hit);
                 }
             }
+
             #endregion
-
-            // if we have hits - hit delegate
-            if (tempHitData.Length > 0)
-            {
-                onHitSystemFinish?.Invoke(tempHitData.ToArray());
-            }
-
-            tempHitData.Dispose();
             entities.Dispose();
             commands.Dispose();
 
@@ -126,6 +115,7 @@ namespace WDIB.Systems
             eManager = World.Active.EntityManager;
 
             wParameters = WeaponParameters.Instance;
+            hitMask = wParameters.GetProjectileHitLayer();
 
             m_DetectHitGroup = GetEntityQuery(new EntityQueryDesc
             {

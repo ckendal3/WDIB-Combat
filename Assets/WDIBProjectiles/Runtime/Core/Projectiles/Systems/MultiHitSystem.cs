@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Unity.Burst;
+﻿using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -20,8 +19,9 @@ namespace WDIB.Systems
         private RaycastHit[] hits;
 
         private WeaponParameters wParameters;
+        private LayerMask hitMask;
 
-        public delegate void HitMultiSystemEvent(ECSMultiHitData[] hitData);
+        public delegate void HitMultiSystemEvent(HitHandlerData ecsData, NativeArray<RaycastHit> hitsData);
         public static HitMultiSystemEvent onMultiHitSystemFinish;
 
         [BurstCompile]
@@ -36,8 +36,10 @@ namespace WDIB.Systems
             [DeallocateOnJobCompletion]
             [ReadOnly] public NativeArray<Rotation> rotations;
 
-            [WriteOnly] public NativeArray<RaycastCommand> commands;
+            [DeallocateOnJobCompletion]
+            [ReadOnly] public NativeArray<MultiHit> multiHits;
 
+            [WriteOnly] public NativeArray<RaycastCommand> commands;
             [ReadOnly] public LayerMask hitLayer;
 
             public void Execute(int index)
@@ -47,7 +49,8 @@ namespace WDIB.Systems
                     from = prevPositions[index].Value,
                     direction = math.forward(rotations[index].Value),
                     distance = math.distance(positions[index].Value, prevPositions[index].Value),
-                    layerMask = hitLayer
+                    layerMask = hitLayer,
+                    maxHits = math.clamp(multiHits[index].maxHits - multiHits[index].hits, 0, multiHits[index].maxHits)
                 };
             }
         }
@@ -61,11 +64,11 @@ namespace WDIB.Systems
                 return inputDeps;
             }
 
-            // Get the entities matching our query
-            NativeArray<Entity> entities = m_MultiHitGroup.ToEntityArray(Allocator.TempJob, out JobHandle entArrayHandle);
-            var multiHits = m_MultiHitGroup.ToComponentDataArray<MultiHit>(Allocator.TempJob, out JobHandle multiHandle);
+            // Get the matching entities from the query
+            var entities = m_MultiHitGroup.ToEntityArray(Allocator.TempJob, out JobHandle entArrayHandle);
+            entArrayHandle.Complete();
 
-            // Setup commands
+            // Setup Ray Commands
             NativeArray<RaycastCommand> rayCommands = new NativeArray<RaycastCommand>(count, Allocator.TempJob);
             JobHandle setupJob = new SetupCommandsJob
             {
@@ -74,70 +77,54 @@ namespace WDIB.Systems
                 positions = m_MultiHitGroup.ToComponentDataArray<Translation>(Allocator.TempJob),
                 rotations = m_MultiHitGroup.ToComponentDataArray<Rotation>(Allocator.TempJob),
                 commands = rayCommands,
-                hitLayer = wParameters.GetProjectileHitLayer()
-
+                hitLayer = hitMask,
+                multiHits = m_MultiHitGroup.ToComponentDataArray<MultiHit>(Allocator.TempJob)
             }.Schedule(count, 32, inputDeps);
 
-            // We need the main thread to wait for all the entities matching our query to be gathered
-            entArrayHandle.Complete();
             setupJob.Complete();
-            multiHandle.Complete();
-
-            // --------------------------
-            // THIS IS GENERATING GARBAGE
-            // --------------------------
-            List<ECSMultiHitData> tempHitData = new List<ECSMultiHitData>();
-            NativeList<RaycastHit> hitsData;
 
             #region Default raycast
             Ray ray;
             int hitCount;
             uint projectileID;
+            HitHandlerData handlerData;
             // for every projectile
             for (int i = 0; i < count; i++)
             {
                 ray = new Ray { origin = rayCommands[i].from, direction = rayCommands[i].direction };
                 projectileID = eManager.GetComponentData<ProjectileID>(entities[i]).ID;
 
-                // if we have a hit
-                ECSMultiHitData ecsData;
-                hitCount = Physics.RaycastNonAlloc(ray, hits, rayCommands[i].distance); //, rayCommands[i].layerMask
+                handlerData = new HitHandlerData
+                {
+                    entity = entities[i],
+                    projectileID = eManager.GetComponentData<ProjectileID>(entities[i]).ID,
+                    ownerID = eManager.GetComponentData<Owner>(entities[i]).ID
+                };
+
+                // if we have any hits
+                hitCount = Physics.RaycastNonAlloc(ray, hits, rayCommands[i].distance, rayCommands[i].layerMask);
                 if (hitCount > 0)
                 {
-                    hitsData = new NativeList<RaycastHit>(Allocator.TempJob);
-                    ecsData = new ECSMultiHitData { entity = entities[i], projectileID = projectileID};
+                    NativeArray<RaycastHit> tmpHits = new NativeArray<RaycastHit>(hitCount, Allocator.TempJob);
 
-                    // For every hit
-                    for (int j = 0; j < hits.Length; j++)
+                    // for every hit
+                    for(int j = 0; j < hitCount; j++)
                     {
-                        if (hits[j].collider != null)
-                        {
-                            hitsData.Add(hits[j]);
-                        }
+                        tmpHits[j] = hits[j];
                     }
 
-                    // if we had valid hits
-                    if (hitsData.Length > 0)
-                    {
-                        ecsData.hits = hitsData.ToArray();
-                        tempHitData.Add(ecsData);
-                    }
-                    hitsData.Dispose();
+                    // call our individual multihit handler
+                    onMultiHitSystemFinish?.Invoke(handlerData, tmpHits);
+
+                    tmpHits.Dispose();
                 }
             }
             #endregion
 
-            // if we had multihit data
-            if (tempHitData.Count > 0)
-            {
-                onMultiHitSystemFinish?.Invoke(tempHitData.ToArray());
-            }
-            
             entities.Dispose();
             rayCommands.Dispose();
-            multiHits.Dispose();
 
-            return setupJob;
+            return JobHandle.CombineDependencies(inputDeps, setupJob);
         }
 
         protected override void OnCreate()
@@ -145,6 +132,7 @@ namespace WDIB.Systems
             eManager = World.Active.EntityManager;
 
             wParameters = WeaponParameters.Instance;
+            hitMask = wParameters.GetProjectileHitLayer();
 
             m_MultiHitGroup = GetEntityQuery(new EntityQueryDesc
             {

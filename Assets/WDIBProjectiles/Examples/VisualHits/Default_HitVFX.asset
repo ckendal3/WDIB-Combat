@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a0eaf2dddcd293449548dd71fc87c32, type: 3}
+  m_Name: Default_HitVFX
+  m_EditorClassIdentifier: 
+  materialVFX:
+  - materialType: 0
+    particleSystem: {fileID: 0}
+  bSpawnMesh: 0
+  mesh: {fileID: 0}
+  material: {fileID: 0}
