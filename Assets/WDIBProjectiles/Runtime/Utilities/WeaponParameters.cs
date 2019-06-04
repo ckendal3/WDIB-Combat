@@ -46,13 +46,13 @@ namespace WDIB.Parameters
         /// <returns></returns>
         public ExplosiveData GetExplosiveDataByID(int ID)
         {
-            #if UNITY_EDITOR
-            if (explosiveSet == null || explosiveSet.Length == 0 || ID > explosiveSet.Length || explosiveSet[ID] == null)
+#if UNITY_EDITOR
+            if (explosiveSet == null || explosiveSet.Length == 0 || ID >= explosiveSet.Length || explosiveSet[ID] == null)
             {
                 Debug.LogWarning($"Explosive ID {ID} does not exist. Returning default explosive.");
                 return defaultExplosive;
             }
-            #endif
+#endif
 
             return explosiveSet[ID];
         }
@@ -64,13 +64,13 @@ namespace WDIB.Parameters
         /// <returns></returns>
         public ProjectileData GetProjectileDataByID(int ID)
         {
-            #if UNITY_EDITOR
-            if (projectileSet == null || projectileSet.Length == 0 || ID > projectileSet.Length || projectileSet[ID] == null) //projectileSet == null || 
+#if UNITY_EDITOR
+            if (projectileSet == null || projectileSet.Length == 0 || ID >= projectileSet.Length || projectileSet[ID] == null) //projectileSet == null || 
             {
                 Debug.LogWarning($"Projectile ID {ID} does not exist. Returning default projectile.");
                 return defaultProjectile;
             }
-            #endif
+#endif
 
             return projectileSet[ID];
         }
