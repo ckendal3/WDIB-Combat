@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using WDIB.Components;
+using WDIB.Parameters;
 using WDIB.Utilities;
 
 namespace WDIB.Systems
@@ -74,6 +75,8 @@ namespace WDIB.Systems
 
         protected override JobHandle OnUpdate(JobHandle inputDeps)
         {
+            globalMaxDistance = WeaponParameters.Instance.GetProjectileMaximumDistance(); // this will be removed after debugging
+
             // Get the things we need to destroy
             NativeQueue<Entity> destroyQueue = new NativeQueue<Entity>(Allocator.TempJob);
 
@@ -124,7 +127,7 @@ namespace WDIB.Systems
 
         protected override void OnCreate()
         {
-            globalMaxDistance = 10000f;
+            globalMaxDistance = WeaponParameters.Instance.GetProjectileMaximumDistance();
         }
     }
 }

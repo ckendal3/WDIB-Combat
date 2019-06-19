@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc41c910b4421f24eb7990022760e3f0, type: 3}
   m_Name: WeaponParameters
   m_EditorClassIdentifier: 
-  GlobalMaximumProjectileRange: 5000
+  GlobalMaximumProjectileRange: 200
   projectileSet:
   - {fileID: 11400000, guid: 2a258d1d5bb45804db8ec156b8e6da79, type: 2}
   - {fileID: 11400000, guid: 13e876b7dbf84eb4ea18d35b2e194efc, type: 2}
@@ -23,6 +23,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   explosiveSet:
   - {fileID: 11400000, guid: 414294173d7aee94c84fc8857465ac52, type: 2}
+  - {fileID: 11400000, guid: fe6827e24b63c6d4eb8aba8a7da033d3, type: 2}
   explosiveHitLayers:
     serializedVersion: 2
     m_Bits: 4294967295

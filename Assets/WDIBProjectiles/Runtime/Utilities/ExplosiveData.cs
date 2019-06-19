@@ -21,8 +21,11 @@ namespace WDIB.Parameters
         [Range(1, 10000)]
         public float force = 500f;
 
-        [Tooltip("The falloff curve for damage based on distance.")]
+        [Tooltip("The falloff curve for damage based on distance from the epicenter.")]
         public AnimationCurve damageCurve;
+
+        [Tooltip("The visual particle effect to display on hit.")]
+        public GameObject particleEffect; // don't want to use gameobject
 
         //add components like ExplodeOnImpact, DelayedExplosion?
     }

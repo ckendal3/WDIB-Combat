@@ -34,16 +34,26 @@ namespace WDIB.Factory
 
         public static void CreateExplosive(int explosiveID, float3 spawnPos, uint ownerID)
         {
-            // -------------------
-            // create visuals here
-            // Make new method ---
-            // -------------------
-
             #if UNITY_EDITOR
             debugGroupID += 1;
             #endif
 
+            // -------------------
+            // create visuals here
+            // Make new method ---
+            // -------------------
+            CreateVisualComponents(spawnPos, weaponParameters.GetExplosiveDataByID(explosiveID)); // temporary, see method
+
             SetComponents(explosiveID, spawnPos, weaponParameters.GetExplosiveDataByID(explosiveID), ownerID);
+        }
+
+        private static void CreateVisualComponents(Vector3 spawnPos, ExplosiveData data)
+        {
+            // TODO: Write Generic Pooling for VFX and eventually pure ECS when more stable (multi-threaded)
+            // ---------------------------------------------------------------------------------------------
+            GameObject tmpGO = GameObject.Instantiate(data.particleEffect, spawnPos, Quaternion.identity);
+            tmpGO.AddComponent<DestroyOnComplete>();
+            // ---------------------------------------------------------------------------------------------
         }
 
         private static void SetComponents(int explosiveID, float3 spawnPos, ExplosiveData data, uint ownerID)

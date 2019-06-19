@@ -8,6 +8,7 @@ namespace WDIB.Parameters
     [CreateAssetMenu(fileName = "Projectile Data", menuName = "WDIB/Data/Projectile")]
     public class ProjectileData : ScriptableObject
     {
+        [Header("Main Data")]
         [Tooltip("Name of the Projectiles")]
         public string projectileName = "Default";
 
@@ -29,10 +30,14 @@ namespace WDIB.Parameters
         public PelletSpread spread = default;
 
         // Visual settings
+        [Header("Visual Components")]
         public Mesh mesh;
         public Material material;
 
-        [Header("Components")]
+        [Range(.01f, 10)]
+        public float length = 1.0f;
+
+        [Header("System Components")]
 
         [NaughtyAttributes.ReorderableList]
         public ComponentDataStruct[] componentData;
