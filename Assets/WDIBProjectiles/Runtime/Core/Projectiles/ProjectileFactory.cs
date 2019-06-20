@@ -32,10 +32,10 @@ namespace WDIB.Factory
             eManager = World.Active.EntityManager;
 
             // create our archetype
-            projectileArch = eManager.CreateArchetype(
-                                        ComponentType.ReadWrite<Translation>(), ComponentType.ReadWrite<Rotation>(), ComponentType.ReadWrite<PreviousTranslation>(),
-                                        ComponentType.ReadWrite<Speed>(), ComponentType.ReadWrite<Damage>(), ComponentType.ReadWrite<ProjectileID>(),
-                                        ComponentType.ReadWrite<Owner>(), ComponentType.ReadWrite<Distance>(),
+            projectileArch = eManager.CreateArchetype(                                                               // probably could just get away with Scale component
+                                        ComponentType.ReadWrite<Translation>(), ComponentType.ReadWrite<Rotation>(), ComponentType.ReadWrite<NonUniformScale>(), 
+                                        ComponentType.ReadWrite<PreviousTranslation>(), ComponentType.ReadWrite<Speed>(), ComponentType.ReadWrite<Damage>(), 
+                                        ComponentType.ReadWrite<ProjectileID>(), ComponentType.ReadWrite<Owner>(), ComponentType.ReadWrite<Distance>(),
                                         ComponentType.ReadOnly<LocalToWorld>(), ComponentType.ReadWrite<RenderMesh>()
                                         );
 
@@ -91,6 +91,7 @@ namespace WDIB.Factory
             //Generic Components
             eManager.SetComponentData(templateEnt, new Translation { Value = spawnPos });
             eManager.SetComponentData(templateEnt, new Rotation { Value = spawnRot });
+            eManager.SetComponentData(templateEnt, new NonUniformScale { Value = new float3(1, 1, data.length) });
             eManager.SetSharedComponentData(templateEnt, new RenderMesh { mesh = data.mesh, material = data.material });
 
             // specific components

@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e1a61ec94cd0a194aaafe17051e308b1, type: 3}
-  m_Name: DefaultExplosive
+  m_Name: FragExplosion
   m_EditorClassIdentifier: 
-  explosiveName: DefaultExplosive
-  radius: 1.97
+  explosiveName: Frag Explosive
+  radius: 5
   damage: 100
   force: 500
   damageCurve:
@@ -40,5 +40,5 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  particleEffect: {fileID: 1074519772002704, guid: 03420f486faf89349bd4843219ebd0d4,
+  particleEffect: {fileID: 1642262215732818, guid: f7bb92c85bd32429f841e201a5daf1d2,
     type: 3}
