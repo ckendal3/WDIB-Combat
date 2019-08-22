@@ -10,7 +10,7 @@ Material:
   m_Name: Tracer_M
   m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
   m_ShaderKeywords: _EMISSION
-  m_LightmapFlags: 1
+  m_LightmapFlags: 0
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
@@ -73,5 +73,5 @@ Material:
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
-    - _Color: {r: 0.5660378, g: 0.5660378, b: 0.5660378, a: 1}
-    - _EmissionColor: {r: 1.1886792, g: 0.46646485, b: 0, a: 1}
+    - _Color: {r: 1, g: 0.67548764, b: 0.4198113, a: 1}
+    - _EmissionColor: {r: 1, g: 0.67548764, b: 0.4198113, a: 1}

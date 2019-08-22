@@ -3,6 +3,13 @@ using Unity.Mathematics;
 
 namespace WDIB.Components
 {
+    // Can be used for spawn delays, time between shots, time between burst rounds, etc
+    public struct TimeBetween : IComponentData
+    {
+        public float resetValue; // resets to this value when timeLeft <= 0
+        public float timeLeft; // this is the timer before it can do whatever action again
+    }
+
     // these are the axis to lock and not do operations on
     public struct LockAxisRotation : IComponentData
     {
@@ -23,7 +30,6 @@ namespace WDIB.Components
 
     // Where the controlled object should be looking
     // this could be a shared component and save perf
-  
     public struct ControlledByPlayer : IComponentData
     {
         public float3 lookPosition;
@@ -53,7 +59,6 @@ namespace WDIB.Components
         {
             return lifeTime.Value;
         }
-
     }
 
     // how much damage the entity should do
@@ -71,10 +76,11 @@ namespace WDIB.Components
 
 
     // where an entity shoud look
+    // remove if the entity is destroyed
     // probably use an entity/translation
-    public struct TargetPosition : IComponentData
+    public struct Target : IComponentData
     {
-        public float3 Value;
+        public float3 Position;
     }
 
     //****************************************************
@@ -84,6 +90,7 @@ namespace WDIB.Components
     public struct DynamicTargetTag : IComponentData {}
 
     // could set the entity to look at
+    // probably can just do this based on if a target's position has changed
     public struct TargetDynamicPositionTag : IComponentData { }
     public struct TargetStaticPositionTag : IComponentData { }
 }

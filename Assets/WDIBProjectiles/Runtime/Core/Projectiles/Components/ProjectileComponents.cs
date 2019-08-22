@@ -16,6 +16,8 @@ namespace WDIB.Components
         public int Value;
     }
 
+    // --------------------------------------------------------------
+    // added TimeBetween in Generic Components
     // Can this be more generic and be used like TimeBetweenActions?
     // This is how long something has to wait between shots - like between trigger pulls
     public struct TimeBetweenShots : IComponentData
@@ -29,6 +31,8 @@ namespace WDIB.Components
         public float resetValue; // resets to this value when timeLeft <= 0
         public float timeLeft; // this is the time before it can shoot again
     }
+
+    // -------------------------------------
 
     public struct ProjectileID : IComponentData
     {
@@ -48,18 +52,22 @@ namespace WDIB.Components
 
     public struct EMP : IComponentData
     {
-
+        public float damage;
     }
 
     public struct SuperCombine : IComponentData
     {
         public int hits;
         public int hitsToCombine;
+
+        public float damage;
     }
 
     public struct TrackPlayer : IComponentData
     {
         public uint ID;
+
+        public float3 position;
     }
 
     public struct Explosive : IComponentData

@@ -166,7 +166,7 @@ namespace WDIB.Factory
         }
 
         [BurstCompile]
-        public struct CreateConeOfFireJob : IJobParallelFor
+        private struct CreateConeOfFireJob : IJobParallelFor
         {
             [WriteOnly]
             public NativeArray<quaternion> spreads;
