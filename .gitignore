@@ -36,3 +36,6 @@ sysinfo.txt
 *.unitypackage
 /Assets/EntityCache.meta
 /Assets/EntityCache/Resources.meta
+/Assets/AmplifyShaderEditor
+/Assets/fx
+/Assets/AmplifyShaderEditor.meta
