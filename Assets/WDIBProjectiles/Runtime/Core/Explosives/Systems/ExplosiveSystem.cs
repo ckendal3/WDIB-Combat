@@ -2,6 +2,7 @@
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 using WDIB.Components;
@@ -20,6 +21,31 @@ public class ExplosiveSystem : JobComponentSystem
 
     public delegate void ExplosionHitSystemEvent(ECSExplosiveData[] hitData);
     public static ExplosionHitSystemEvent onExplosionHitSystemFinish;
+
+    public struct ValidHitCheckJob : IJobParallelFor
+    {
+        [ReadOnly]
+        public float3 fromPosition;
+        [ReadOnly]
+        public LayerMask hitMask;
+        [WriteOnly]
+        NativeArray<RaycastCommand> commands;
+        [ReadOnly]
+        NativeArray<float3> toPositions;
+
+        public void Execute(int index)
+        {
+            commands[index] = new RaycastCommand
+            {
+                from = fromPosition,
+                distance = math.distance(toPositions[index], fromPosition),
+                direction =  math.normalize(toPositions[index] - fromPosition), 
+                layerMask = hitMask,
+                maxHits = 1
+            };
+        }
+    }
+
 
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
@@ -69,6 +95,10 @@ public class ExplosiveSystem : JobComponentSystem
                 // Do a batch raycast to all hits and filter out all overlapping colliders that 
                 // aren't hit first - so raycast to an overlapped object and make sure there isn't
                 // a wall inbetween them and the explosion
+                // need to have an environmental check so we don't have to cycle through everything
+                //NativeArray<RaycastCommand> commands = new NativeArray<RaycastCommand>(hitCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                //NativeArray<RaycastHit> hitResults = new NativeArray<RaycastHit>(hitCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                //RaycastCommand.ScheduleBatch(commands, hitResults, 2, );
 
                 // for every hit we have
                 for (int j = 0; j < colliders.Length; j++)
@@ -88,6 +118,9 @@ public class ExplosiveSystem : JobComponentSystem
                     ecsData.colliders = explosiveHits.ToArray();
                     tmpHitData.Add(ecsData);
                 }
+
+                //commands.Dispose();
+                //hitResults.Dispose();
             }
             
         }
