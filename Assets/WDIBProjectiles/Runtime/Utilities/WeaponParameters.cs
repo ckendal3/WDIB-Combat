@@ -12,6 +12,10 @@ namespace WDIB.Parameters
         [SerializeField]
         private float GlobalMaximumProjectileRange = 1000f;
 
+        [Header("Weapons")]
+        [SerializeField]
+        private WeaponData[] weaponSet = null;
+
         [Header("Projectiles")]
         [SerializeField]
         private ProjectileData[] projectileSet = null;
@@ -29,6 +33,10 @@ namespace WDIB.Parameters
 
 #if UNITY_EDITOR
 
+        [SerializeField]
+        [Tooltip("This is the projectile used when there is a projectile related error.")]
+        private WeaponData defaultWeapon = null;
+
         [Header("Debug Settings")]
         [Tooltip("This is the explosive used when there is an explosive related error.")]
         [SerializeField]
@@ -38,6 +46,25 @@ namespace WDIB.Parameters
         [Tooltip("This is the projectile used when there is a projectile related error.")]
         private ProjectileData defaultProjectile = null;
 #endif
+
+
+        /// <summary>
+        /// Get the weapon data by the specified ID.
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <returns></returns>
+        public WeaponData GetWeaponDataByID(int ID)
+        {
+#if UNITY_EDITOR
+            if (weaponSet == null || weaponSet.Length == 0 || ID >= weaponSet.Length || weaponSet[ID] == null)
+            {
+                Debug.LogWarning($"Projectile ID {ID} does not exist. Returning default projectile.");
+                return defaultWeapon;
+            }
+#endif
+
+            return weaponSet[ID];
+        }
 
         /// <summary>
         /// Get the explosive data by the specified ID.
