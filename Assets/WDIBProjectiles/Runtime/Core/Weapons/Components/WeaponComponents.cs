@@ -54,21 +54,14 @@ public struct WeaponState : IComponentData
     public bool isReloading;
 }
 
-public struct ShootFromOffset : IComponentData
-{
-    public float3 Value;
-    public float3 Offset;
-    public float3 Heading;
-}
-
-public struct ShootFromCamera : IComponentData
-{
-    public float3 Position;
-    public quaternion Rotation;
-}
-
-public struct Muzzle : IComponentData
+public struct ShootFrom : IComponentData
 {
     public Entity entity;
     public float3 position;
+    public quaternion rotation;
+}
+
+public struct MuzzleOffset : IComponentData
+{
+    public float3 Value;
 }

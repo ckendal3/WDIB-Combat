@@ -9,42 +9,24 @@ using Unity.Transforms;
 using UnityEngine;
 using WDIB.Components;
 
-public class ShootFromSystem : JobComponentSystem
+public class ShootFromSystem : ComponentSystem
 {
-    [BurstCompile]
-    public struct UpdateShootFrom: IJobForEach<ShootFromOffset, Owner, Translation, Rotation>
-    {
-        public void Execute(ref ShootFromOffset shootFrom, [ReadOnly] ref Owner owner, [ReadOnly] ref Translation position, [ReadOnly] ref Rotation rotation)
-        {
-            //shootFrom.value = new float3(position.Value + (shootFrom.offset * math.forward(rotation.Value)));
+    EntityManager entityManager;
 
-            shootFrom.Value = position.Value + (shootFrom.Offset * (math.forward(rotation.Value) * shootFrom.Heading)); // math.normalize(shootFrom.value) + math.forward(rotation.Value)
-        }
+    protected override void OnUpdate()
+    {
+        Entities.ForEach((Entity entity, ref ShootFrom shootFrom) =>
+        {
+            float3 newPos = entityManager.GetComponentData<Translation>(shootFrom.entity).Value;
+            quaternion newRot = entityManager.GetComponentData<Rotation>(shootFrom.entity).Value;
+
+            shootFrom.position = newPos;
+            shootFrom.rotation = newRot;
+        });
     }
 
-    // TODO: Implement this in i02
-    //[BurstCompile]
-    //public struct UpdateShootFromCamera : IJobForEach<ShootFromCamera, Owner>
-    //{
-    //    NativeArray<PlayerState> states;
-
-    //    public void Execute([WriteOnly] ref ShootFromCamera shootFrom, [ReadOnly] ref Owner owner)
-    //    {
-    //        for (int i = 0; i < states.Length; i++)
-    //        {
-    //            if(states[i].ID == owner.ID)
-    //            {
-    //                shootFrom.Position = states[i].Position;
-    //                shootFrom.Rotation = states[i].Rotation;
-    //                return;
-    //            }
-    //        }
-    //    }
-    //}
-
-
-    protected override JobHandle OnUpdate(JobHandle inputDeps)
+    protected override void OnCreate()
     {
-        return new UpdateShootFrom() { }.Schedule(this, inputDeps);
+        entityManager = World.Active.EntityManager;
     }
 }

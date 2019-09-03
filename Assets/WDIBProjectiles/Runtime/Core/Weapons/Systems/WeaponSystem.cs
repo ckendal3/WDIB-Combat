@@ -4,7 +4,6 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 using WDIB.Components;
 using WDIB.Factory;
 using WDIB.Parameters;
@@ -45,17 +44,37 @@ public class WeaponSystem : JobComponentSystem
 
     // TODO: Should use PlayerState's Camera Position and Rotation for projectiles
     [BurstCompile]
-    public struct ShootWeaponJob : IJobForEach<WeaponState, Weapon, TimeBetweenShots, Owner, Rotation, ShootFromOffset>
+    public struct ShootFromJob : IJobForEach<WeaponState, Weapon, TimeBetweenShots, Owner, Rotation, ShootFrom>
     {
         public NativeQueue<ProjectileQueueData>.Concurrent queueData;
 
         public void Execute([ReadOnly] ref WeaponState state, [ReadOnly] ref Weapon weapon, [ReadOnly] ref TimeBetweenShots timeBetween, 
-            [ReadOnly] ref Owner owner, [ReadOnly] ref Rotation rotation, [ReadOnly] ref ShootFromOffset offset)
+            [ReadOnly] ref Owner owner, [ReadOnly] ref Rotation rotation, [ReadOnly] ref ShootFrom shootFrom)
         {
             if (state.isShooting && timeBetween.value < 0)
             {
                 // gather all our shots to be fired
-                queueData.Enqueue(new ProjectileQueueData { owner = (int)owner.ID, weaponID = weapon.ID, spawnPos = offset.Value, spawnRot = rotation.Value });
+                queueData.Enqueue(new ProjectileQueueData { owner = (int)owner.ID, weaponID = weapon.ID, spawnPos = shootFrom.position, spawnRot = shootFrom.rotation });
+
+                // we shot, gun needs to wait
+                timeBetween.value = timeBetween.resetValue;
+            }
+        }
+    }
+
+    [BurstCompile]
+    [ExcludeComponent(typeof(ShootFrom))]
+    public struct ShootFromMuzzleJob : IJobForEach<WeaponState, Weapon, TimeBetweenShots, Owner, Rotation, MuzzleOffset>
+    {
+        public NativeQueue<ProjectileQueueData>.Concurrent queueData;
+
+        public void Execute([ReadOnly] ref WeaponState state, [ReadOnly] ref Weapon weapon, [ReadOnly] ref TimeBetweenShots timeBetween, 
+            [ReadOnly] ref Owner owner, [ReadOnly] ref Rotation rotation, [ReadOnly] ref MuzzleOffset muzzle)
+        {
+            if (state.isShooting && timeBetween.value < 0)
+            {
+                // gather all our shots to be fired
+                queueData.Enqueue(new ProjectileQueueData { owner = (int)owner.ID, weaponID = weapon.ID, spawnPos = muzzle.Value, spawnRot = rotation.Value });
 
                 // we shot, gun needs to wait
                 timeBetween.value = timeBetween.resetValue;
@@ -76,12 +95,21 @@ public class WeaponSystem : JobComponentSystem
         }.Schedule(this, inputDeps);
 
         // create projectile data for weapons
-        JobHandle shootJob = new ShootWeaponJob()
+        JobHandle shootFromJob = new ShootFromJob()
         {
             queueData = queueData.ToConcurrent()
         }.Schedule(this, processWeaponJob);
 
-        shootJob.Complete();
+        shootFromJob.Complete();
+
+        // create projectile data for weapons
+        JobHandle shootFromMuzzleJob = new ShootFromMuzzleJob()
+        {
+            queueData = queueData.ToConcurrent()
+        }.Schedule(this, processWeaponJob);
+
+        shootFromMuzzleJob.Complete();
+
 
         // Spawn all of projectiles from the weapons
         for (int i = 0; i < queueData.Count; i++)
@@ -93,7 +121,7 @@ public class WeaponSystem : JobComponentSystem
 
         queueData.Dispose();
 
-        return shootJob;
+        return JobHandle.CombineDependencies(shootFromJob, shootFromMuzzleJob);
     }
 
     protected override void OnCreate()

@@ -28,7 +28,7 @@ namespace WDIB.Factory
                                         ComponentType.ReadWrite<Translation>(), ComponentType.ReadWrite<Rotation>(),
                                         ComponentType.ReadWrite<Weapon>(), ComponentType.ReadWrite<Owner>(),
                                         ComponentType.ReadOnly<LocalToWorld>(), ComponentType.ReadWrite<TimeBetweenShots>(),
-                                        ComponentType.ReadWrite<WeaponState>(), ComponentType.ReadWrite<ShootFromOffset>()
+                                        ComponentType.ReadWrite<WeaponState>(), ComponentType.ReadWrite<MuzzleOffset>()
                                         );
 
             wParameters = WeaponParameters.Instance;
@@ -91,7 +91,7 @@ namespace WDIB.Factory
             eManager.SetComponentData(entity, new Weapon { ID = weaponID });
             eManager.SetComponentData(entity, new TimeBetweenShots { value = 0, resetValue = data.timeBetweenShots });
             eManager.SetComponentData(entity, new WeaponState { isReloading = false, isShooting = false });
-            eManager.SetComponentData(entity, new ShootFromOffset { Value = 0, Offset = offsetPos, Heading = math.normalize(spawnPos - offsetPos) });
+            eManager.SetComponentData(entity, new MuzzleOffset { Value = data.muzzleOffset});
             #endregion
         }
     }
