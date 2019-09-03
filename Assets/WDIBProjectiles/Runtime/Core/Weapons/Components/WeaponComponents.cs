@@ -66,3 +66,9 @@ public struct ShootFromCamera : IComponentData
     public float3 Position;
     public quaternion Rotation;
 }
+
+public struct Muzzle : IComponentData
+{
+    public Entity entity;
+    public float3 position;
+}

@@ -1,14 +1,8 @@
 ﻿using WDIB.Parameters;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
 using Unity.Transforms;
 using WDIB.Components;
-using UnityEngine;
-using Random = Unity.Mathematics.Random;
-using Unity.Burst;
-using Unity.Jobs;
 
 namespace WDIB.Factory
 {
