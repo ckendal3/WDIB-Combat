@@ -2,6 +2,8 @@
 using UnityEditor;
 using UnityEngine;
 using WDIB.Components;
+using WDIB.Explosives;
+using WDIB.Projectiles;
 
 namespace WDIB.Parameters
 {
@@ -76,16 +78,16 @@ public struct ComponentDataStruct : IGetComponent
             case EComponentType.HeadShot:
                 return new HeadShotMultiplier { Value = floatValue };
             case EComponentType.MultiHit:
-                return new MultiHit { hits = 0, maxHits = intValue };
+                return new MultiHit { Hits = 0, MaxHits = intValue };
             case EComponentType.EMP:
                 Debug.LogWarning("EMP is not implemented.");
                 return null;
             case EComponentType.SuperCombine:
-                return new SuperCombine { hits = 0, hitsToCombine = intValue };
+                return new SuperCombine { Hits = 0, HitsToCombine = intValue };
             case EComponentType.Tracking:
-                return new TrackPlayer { ID = (uint)intValue };
+                return new TrackPlayer { ID = (uint) intValue };
             case EComponentType.Explosive:
-                return new Explosive { ID = (uint)intValue };
+                return new Explosive { ID = intValue };
             case EComponentType.NotImplemented:
                 return null;
             default:

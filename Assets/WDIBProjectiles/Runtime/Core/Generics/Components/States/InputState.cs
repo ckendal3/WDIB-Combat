@@ -1,18 +1,19 @@
 ﻿using Unity.Entities;
 using Unity.Mathematics;
 
-public struct InputState : IComponentData
+namespace WDIB.Inputs
 {
-    public bool isPrimaryAction;
-    public bool isSecondaryAction;
+    public struct InputState : IComponentData
+    {
+        public bool IsPrimaryAction;
+        public bool IsSecondaryAction;
 
-    public bool isReloading; // think reloading
+        public bool IsReloading;
 
-    public bool isPulling;
-    public bool isPushing;
-    public bool isJumping;
-    public bool isCrouching;
+        public bool IsJumping;
+        public bool IsCrouching;
 
-    public float2 movementInput;
-    public float2 rotationInput;
+        public float2 MovementInput;
+        public float2 RotationInput;
+    }
 }

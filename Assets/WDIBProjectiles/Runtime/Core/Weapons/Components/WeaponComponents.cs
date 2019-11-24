@@ -1,67 +1,95 @@
 ﻿using Unity.Entities;
 using Unity.Mathematics;
 
-
-// TODO: Implement systems
-// TODO: Make PickupAble component which is for ammo and the weapon itself. Could check if player is close enough or a trigger event with a raycast for walls
-
-
-// The buffers should act as if they are inventory holders
-
-// only allocate for 2 weapons
-// we use an entity because we need to actually keep track of the weapon and its data
-[InternalBufferCapacity(2)]
-public struct WeaponsBuffer : IBufferElementData
+namespace WDIB.Weapons
 {
-    // These implicit conversions are optional, but can help reduce typing.
-    public static implicit operator Entity(WeaponsBuffer e) { return e.Value; }
-    public static implicit operator WeaponsBuffer(Entity e) { return new WeaponsBuffer { Value = e }; }
+    public struct Weapon : IComponentData
+    {
+        public int ID;
+    }
 
-    // Actual value each buffer element will store.
-    public Entity Value;
-}
+    public struct TimeBetweenShots : IComponentData
+    {
+        public float Value;
+        public float ResetValue;
+    }
 
-// only allocate for 4 grenades
-// we use an int because we don't actually need the object, its just an ID to spawn the proper grenade 
-[InternalBufferCapacity(4)]
-public struct GrenadesBuffer : IBufferElementData
-{
-    // These implicit conversions are optional, but can help reduce typing.
-    public static implicit operator int(GrenadesBuffer e) { return e.Value; }
-    public static implicit operator GrenadesBuffer(int e) { return new GrenadesBuffer { Value = e }; }
+    public struct WeaponState : IComponentData
+    {
+        public bool IsShooting;
+        public bool IsReloading;
+    }
 
-    // Actual value each buffer element will store.
-    public int Value;
-}
+    public struct ShootFromOffset : IComponentData
+    {
+        public float3 Value;
+        public float3 Offset;
+        public float3 Heading;
+    }
 
-// TODO: Create Entity Archetype for Inventory: Entity with InventoryTag, WeaponsBuffer, GrenadesBuffer
-public struct InventoryTag : IComponentData { }
+    public struct ShootFromCamera : IComponentData
+    {
+        public float3 Position;
+        public quaternion Rotation;
+    }
 
-public struct Weapon : IComponentData
-{
-    public int ID;
-}
+    public struct ProjectileCount : IComponentData
+    {
+        public int Value;
+    }
 
-public struct TimeBetweenShots : IComponentData
-{
-    public float value;
-    public float resetValue;
-}
+    public struct TimeBetweenBurstShots : IComponentData
+    {
+        public float Value;
+        public float ResetValue;
+    }
 
-public struct WeaponState : IComponentData
-{
-    public bool isShooting;
-    public bool isReloading;
-}
+    // This should just be an offset point?
+    public struct ProjectileSpawnPoint : IComponentData
+    {
+        public float distance; // how far away to spawns
+        public float3 heading;
+        public float3 direction; // the direction
+    }
 
-public struct ShootFrom : IComponentData
-{
-    public Entity entity;
-    public float3 position;
-    public quaternion rotation;
-}
+    public struct Reload : IComponentData
+    {
+        public float Value; // this is how long is left
+        public float ResetValue; // this is where the countdown timer starts
+    }
 
-public struct MuzzleOffset : IComponentData
-{
-    public float3 Value;
+    public struct ReloadTag : IComponentData { }
+
+    public struct MeleeComponent : IComponentData
+    {
+        public float Damage; // how much damage to do
+
+        // TODO: Read the comments below
+        // these should be pairable with other actions - it could just use an action tag
+        public float Duration; // how long till its done
+        public float ResetDuration; // this is where the countdown timer starts
+    }
+
+    public struct LungeComponent : IComponentData
+    {
+        public float Distance; // max lunge distance
+        public float Rate; // how many m/s to move
+    }
+
+    //TODO: It should be a buffer to determine how many levels
+    // each element is the amount to zoom in
+    public struct Zoom : IComponentData
+    {
+
+    }
+
+    /// <summary>
+    /// A tag to determine if the weapon is equipped
+    /// </summary>
+    public struct EquippedTag : IComponentData { }
+
+    public struct Actioning : IComponentData
+    {
+        public float Value;
+    }
 }

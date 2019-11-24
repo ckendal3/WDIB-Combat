@@ -1,18 +1,17 @@
 ﻿using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
 using WDIB.Components;
 using WDIB.Parameters;
 
-namespace WDIB.Factory
+namespace WDIB.Explosives
 {
     public static class ExplosiveFactory
     {
-        static EntityManager eManager;
-        static EntityArchetype explosiveArch;
-        static WeaponParameters weaponParameters;
+        static EntityManager EntityManager;
+        static EntityArchetype Archetype;
+        static WeaponParameters Parameters;
 
         // use for debugging
         #if UNITY_EDITOR
@@ -21,15 +20,15 @@ namespace WDIB.Factory
 
         static ExplosiveFactory()
         {
-            eManager = World.Active.EntityManager;
+            EntityManager = World.Active.EntityManager;
 
             // create our archetype
-            explosiveArch = eManager.CreateArchetype(
+            Archetype = EntityManager.CreateArchetype(
                                         ComponentType.ReadWrite<Translation>(), ComponentType.ReadWrite<Explosive>(),
-                                        ComponentType.ReadOnly<LocalToWorld>(), ComponentType.ReadWrite<Owner>()
+                                        ComponentType.ReadOnly<LocalToWorld>(), ComponentType.ReadWrite<OwnerID>()
                                         );
 
-            weaponParameters = WeaponParameters.Instance;
+            Parameters = WeaponParameters.Instance;
         }
 
         public static void CreateExplosive(int explosiveID, float3 spawnPos, uint ownerID)
@@ -42,9 +41,9 @@ namespace WDIB.Factory
             // create visuals here
             // Make new method ---
             // -------------------
-            CreateVisualComponents(spawnPos, weaponParameters.GetExplosiveDataByID(explosiveID)); // temporary, see method
+            CreateVisualComponents(spawnPos, Parameters.GetExplosiveDataByID(explosiveID)); // temporary, see method
 
-            SetComponents(explosiveID, spawnPos, weaponParameters.GetExplosiveDataByID(explosiveID), ownerID);
+            SetComponents(explosiveID, spawnPos, Parameters.GetExplosiveDataByID(explosiveID), ownerID);
         }
 
         private static void CreateVisualComponents(Vector3 spawnPos, ExplosiveData data)
@@ -61,20 +60,20 @@ namespace WDIB.Factory
             Entity templateEnt;
 
             // create the entity to clone from
-            templateEnt = eManager.CreateEntity(explosiveArch);
+            templateEnt = EntityManager.CreateEntity(Archetype);
 
             #if UNITY_EDITOR
             if (debugGroupID > 65000)
             {
                 debugGroupID = 0;
             }
-            eManager.SetName(templateEnt, data.explosiveName + " Explosive " + debugGroupID);
+            EntityManager.SetName(templateEnt, data.explosiveName + " Explosive " + debugGroupID);
             #endif
 
             //Generic Components
-            eManager.SetComponentData(templateEnt, new Translation { Value = spawnPos });
-            eManager.SetComponentData(templateEnt, new Owner { ID = ownerID });
-            eManager.SetComponentData(templateEnt, new Explosive { ID = (uint)explosiveID });
+            EntityManager.SetComponentData(templateEnt, new Translation { Value = spawnPos });
+            EntityManager.SetComponentData(templateEnt, new OwnerID { Value = ownerID });
+            EntityManager.SetComponentData(templateEnt, new Explosive { ID = explosiveID });
         }
     }
 }

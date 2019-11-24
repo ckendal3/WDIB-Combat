@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using WDIB.Factory;
+﻿using UnityEngine;
+using WDIB.Projectiles;
 
 public class Test_Projectile : MonoBehaviour
 {

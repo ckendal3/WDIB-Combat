@@ -1,20 +1,20 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using Unity.Entities;
-using UnityEngine;
+﻿using Unity.Entities;
 
-// TODO: Implement timed reload
-// TODO: Implement ammo reduction on reload
-// TODO: Implement Battery Cooldown
-public class ReloadSystem : ComponentSystem
+namespace WDIB.Weapons
 {
-    protected override void OnUpdate()
+    // TODO: Implement timed reload
+    // TODO: Implement ammo reduction on reload
+    // TODO: Implement Battery Cooldown
+    public class ReloadSystem : ComponentSystem
     {
-        Entities.WithAll<ReloadTag, Weapon>().ForEach((Entity entity, ref AmmoComponent ammo) =>
+        protected override void OnUpdate()
         {
-            ammo.value = ammo.maxValue;
+            Entities.WithAll<ReloadTag, Weapon>().ForEach((Entity entity, ref AmmoComponent ammo) =>
+            {
+                ammo.value = ammo.maxValue;
 
-            World.Active.EntityManager.RemoveComponent<ReloadTag>(entity);
-        });
+                World.Active.EntityManager.RemoveComponent<ReloadTag>(entity);
+            });
+        }
     }
 }

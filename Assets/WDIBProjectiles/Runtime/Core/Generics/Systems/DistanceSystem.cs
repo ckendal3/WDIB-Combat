@@ -26,6 +26,5 @@ namespace WDIB.Systems
 
             return distanceJob;
         }
-
     }
 }

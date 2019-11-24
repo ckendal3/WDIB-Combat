@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using WDIB.Factory;
+using WDIB.Explosives;
 
 public class Test_Explosive : MonoBehaviour
 {

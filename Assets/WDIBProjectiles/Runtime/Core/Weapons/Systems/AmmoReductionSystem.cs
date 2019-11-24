@@ -1,13 +1,16 @@
 ﻿using Unity.Entities;
 
-public class AmmoReductionSystem : ComponentSystem
+namespace WDIB.Weapons
 {
-    protected override void OnUpdate()
+    public class AmmoReductionSystem : ComponentSystem
     {
-        Entities.WithAll<ReduceAmmoTag, Weapon>().ForEach((Entity entity, ref AmmoComponent ammo) =>
+        protected override void OnUpdate()
         {
-            ammo.value -= 1;
-            World.Active.EntityManager.RemoveComponent<ReduceAmmoTag>(entity);
-        });
+            Entities.WithAll<ReduceAmmoTag, Weapon>().ForEach((Entity entity, ref AmmoComponent ammo) =>
+            {
+                ammo.value -= 1;
+                World.Active.EntityManager.RemoveComponent<ReduceAmmoTag>(entity);
+            });
+        }
     }
 }

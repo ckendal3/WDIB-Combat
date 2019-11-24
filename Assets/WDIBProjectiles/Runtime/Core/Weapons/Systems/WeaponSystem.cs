@@ -5,140 +5,116 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 using WDIB.Components;
-using WDIB.Factory;
+using WDIB.Inputs;
 using WDIB.Parameters;
+using WDIB.Player;
+using WDIB.Projectiles;
 
-public class WeaponSystem : JobComponentSystem
+namespace WDIB.Weapons
 {
-    private EntityQuery m_Inputs;
-
-    // This creates a new weapon state based on weapon state
-    [BurstCompile]
-    public struct ProcessWeaponState : IJobForEach<Weapon, WeaponState, Owner>
+    public class WeaponSystem : JobComponentSystem
     {
-        [DeallocateOnJobCompletion]
-        public NativeArray<InputState> inputs;
+        private EntityQuery InputQuery;
 
-        [DeallocateOnJobCompletion]
-        public NativeArray<Owner> inputsOwner;
-
-        public void Execute([ReadOnly] ref Weapon weapon, [WriteOnly] ref WeaponState state, [ReadOnly] ref Owner owner)
+        // This creates a new weapon state based on weapon state
+        [BurstCompile]
+        public struct ProcessWeaponState : IJobForEach<Weapon, WeaponState, OwnerID>
         {
-            state = new WeaponState()
-            {
-                isReloading = false,
-                isShooting = false
-            };
+            [DeallocateOnJobCompletion]
+            public NativeArray<InputState> inputs;
 
+            [DeallocateOnJobCompletion]
+            public NativeArray<OwnerID> inputsOwner;
 
-            for (int i = 0; i < inputs.Length; i++)
+            public void Execute([ReadOnly] ref Weapon weapon, [WriteOnly] ref WeaponState state, [ReadOnly] ref OwnerID owner)
             {
-                if(owner.ID == inputsOwner[i].ID)
+                state = new WeaponState()
                 {
-                    state.isShooting = inputs[i].isPrimaryAction;
-                    state.isReloading = inputs[i].isReloading;
+                    IsReloading = false,
+                    IsShooting = false
+                };
+
+
+                for (int i = 0; i < inputs.Length; i++)
+                {
+                    if (owner.Value == inputsOwner[i].Value)
+                    {
+                        state.IsShooting = inputs[i].IsPrimaryAction;
+                        state.IsReloading = inputs[i].IsReloading;
+                    }
                 }
             }
         }
-    }
 
-    // TODO: Should use PlayerState's Camera Position and Rotation for projectiles
-    [BurstCompile]
-    public struct ShootFromJob : IJobForEach<WeaponState, Weapon, TimeBetweenShots, Owner, Rotation, ShootFrom>
-    {
-        public NativeQueue<ProjectileQueueData>.Concurrent queueData;
-
-        public void Execute([ReadOnly] ref WeaponState state, [ReadOnly] ref Weapon weapon, [ReadOnly] ref TimeBetweenShots timeBetween, 
-            [ReadOnly] ref Owner owner, [ReadOnly] ref Rotation rotation, [ReadOnly] ref ShootFrom shootFrom)
+        // TODO: Should use PlayerState's Camera Position and Rotation for projectiles
+        [BurstCompile]
+        public struct ShootWeaponJob : IJobForEach<WeaponState, Weapon, TimeBetweenShots, OwnerID, Rotation, ShootFromOffset>
         {
-            if (state.isShooting && timeBetween.value < 0)
-            {
-                // gather all our shots to be fired
-                queueData.Enqueue(new ProjectileQueueData { owner = (int)owner.ID, weaponID = weapon.ID, spawnPos = shootFrom.position, spawnRot = shootFrom.rotation });
+            public NativeQueue<ProjectileQueueData>.ParallelWriter queueData;
 
-                // we shot, gun needs to wait
-                timeBetween.value = timeBetween.resetValue;
+            public void Execute([ReadOnly] ref WeaponState state, [ReadOnly] ref Weapon weapon, [ReadOnly] ref TimeBetweenShots timeBetween,
+                [ReadOnly] ref OwnerID owner, [ReadOnly] ref Rotation rotation, [ReadOnly] ref ShootFromOffset offset)
+            {
+                if (state.IsShooting && timeBetween.Value < 0)
+                {
+                    // gather all our shots to be fired
+                    queueData.Enqueue(new ProjectileQueueData { Owner = owner.Value, WeaponID = weapon.ID, SpawnPos = offset.Value, SpawnRot = rotation.Value });
+
+                    // we shot, gun needs to wait
+                    timeBetween.Value = timeBetween.ResetValue;
+                }
             }
         }
-    }
 
-    [BurstCompile]
-    [ExcludeComponent(typeof(ShootFrom))]
-    public struct ShootFromMuzzleJob : IJobForEach<WeaponState, Weapon, TimeBetweenShots, Owner, Rotation, MuzzleOffset>
-    {
-        public NativeQueue<ProjectileQueueData>.Concurrent queueData;
-
-        public void Execute([ReadOnly] ref WeaponState state, [ReadOnly] ref Weapon weapon, [ReadOnly] ref TimeBetweenShots timeBetween, 
-            [ReadOnly] ref Owner owner, [ReadOnly] ref Rotation rotation, [ReadOnly] ref MuzzleOffset muzzle)
+        protected override JobHandle OnUpdate(JobHandle inputDeps)
         {
-            if (state.isShooting && timeBetween.value < 0)
+            NativeQueue<ProjectileQueueData> queueData = new NativeQueue<ProjectileQueueData>(Allocator.TempJob);
+
+            // set weapon states
+            JobHandle processWeaponJob = new ProcessWeaponState()
             {
-                // gather all our shots to be fired
-                queueData.Enqueue(new ProjectileQueueData { owner = (int)owner.ID, weaponID = weapon.ID, spawnPos = muzzle.Value, spawnRot = rotation.Value });
+                inputs = InputQuery.ToComponentDataArray<InputState>(Allocator.TempJob),
+                inputsOwner = InputQuery.ToComponentDataArray<OwnerID>(Allocator.TempJob)
 
-                // we shot, gun needs to wait
-                timeBetween.value = timeBetween.resetValue;
+            }.Schedule(this, inputDeps);
+
+            // create projectile data for weapons
+            JobHandle shootJob = new ShootWeaponJob()
+            {
+                queueData = queueData.AsParallelWriter()
+            }.Schedule(this, processWeaponJob);
+
+            shootJob.Complete();
+
+            // Spawn all of projectiles from the weapons
+            for (int i = 0; i < queueData.Count; i++)
+            {
+                ProjectileQueueData data = queueData.Dequeue();
+
+                ProjectileFactory.CreateProjectiles(WeaponParameters.Instance.GetWeaponDataByID(data.WeaponID).projectileId, data.SpawnPos, data.SpawnRot, data.Owner);
             }
+
+            queueData.Dispose();
+
+            return shootJob;
+        }
+
+        protected override void OnCreate()
+        {
+            InputQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new ComponentType[] { ComponentType.ReadOnly<InputState>(), ComponentType.ReadOnly<OwnerID>(), ComponentType.ReadOnly<PlayerState>() }
+            });
+
         }
     }
 
-    protected override JobHandle OnUpdate(JobHandle inputDeps)
+    public struct ProjectileQueueData
     {
-        NativeQueue<ProjectileQueueData> queueData = new NativeQueue<ProjectileQueueData>(Allocator.TempJob);
+        public int WeaponID;
+        public uint Owner;
 
-        // set weapon states
-        JobHandle processWeaponJob = new ProcessWeaponState()
-        {
-            inputs = m_Inputs.ToComponentDataArray<InputState>(Allocator.TempJob),
-            inputsOwner = m_Inputs.ToComponentDataArray<Owner>(Allocator.TempJob)
-
-        }.Schedule(this, inputDeps);
-
-        // create projectile data for weapons
-        JobHandle shootFromJob = new ShootFromJob()
-        {
-            queueData = queueData.ToConcurrent()
-        }.Schedule(this, processWeaponJob);
-
-        shootFromJob.Complete();
-
-        // create projectile data for weapons
-        JobHandle shootFromMuzzleJob = new ShootFromMuzzleJob()
-        {
-            queueData = queueData.ToConcurrent()
-        }.Schedule(this, processWeaponJob);
-
-        shootFromMuzzleJob.Complete();
-
-
-        // Spawn all of projectiles from the weapons
-        for (int i = 0; i < queueData.Count; i++)
-        {
-            ProjectileQueueData data = queueData.Dequeue();
-
-            ProjectileFactory.CreateProjectiles(WeaponParameters.Instance.GetWeaponDataByID(data.weaponID).projectileId, data.spawnPos, data.spawnRot, (uint) data.owner);
-        }
-
-        queueData.Dispose();
-
-        return JobHandle.CombineDependencies(shootFromJob, shootFromMuzzleJob);
+        public float3 SpawnPos;
+        public quaternion SpawnRot;
     }
-
-    protected override void OnCreate()
-    {
-        m_Inputs = GetEntityQuery(new EntityQueryDesc
-        {
-            All = new ComponentType[] { ComponentType.ReadOnly<InputState>(), ComponentType.ReadOnly<Owner>(), ComponentType.ReadOnly<PlayerState>() }
-        }) ;
-
-    }
-}
-
-public struct ProjectileQueueData
-{
-    public int weaponID;
-    public int owner;
-
-    public float3 spawnPos;
-    public quaternion spawnRot;
 }

@@ -1,96 +1,101 @@
 ﻿using Unity.Entities;
 using Unity.Mathematics;
+using WDIB.Weapons;
 
 namespace WDIB.Components
 {
-    // Can be used for spawn delays, time between shots, time between burst rounds, etc
+    /// <summary>
+    /// Can be used for spawn delays, time between shots, time between burst rounds, etc
+    /// </summary>
     public struct TimeBetween : IComponentData
     {
         public float resetValue; // resets to this value when timeLeft <= 0
         public float timeLeft; // this is the timer before it can do whatever action again
     }
 
-    // these are the axis to lock and not do operations on
+    /// <summary>
+    /// The axes to lock and to prevent operations on (freeze)
+    /// </summary>
     public struct LockAxisRotation : IComponentData
     {
         public bool3 Value;
     }
 
-    // These are the axis on movement that should move
+    /// <summary>
+    /// The axes to prevent operations on (freeze)
+    /// </summary>
     public struct LockAxisTranslation : IComponentData
     {
         public bool3 Value;
     }
 
-    // this is like player controller - like the owner
-    public struct Owner : IComponentData
+    /// <summary>
+    /// The player owner with occupanying ID
+    /// </summary>
+    public struct OwnerID : IComponentData
     {
-        public uint ID;
+        public uint Value;
     }
 
-    // Where the controlled object should be looking
-    // this could be a shared component and save perf
-    public struct ControlledByPlayer : IComponentData
-    {
-        public float3 lookPosition;
-    }
+    // TODO: REMOVE THIS IS NO ISSUES
+    //// Where the controlled object should be looking
+    //// this could be a shared component and save perf
+    //public struct ControlledByPlayer : IComponentData
+    //{
+    //    public float3 lookPosition;
+    //}
 
-    // How much health an entity should have
+    /// <summary>
+    /// Health component of an entity
+    /// </summary>
     public struct Health : IComponentData
     {
         public float Value;
-
-        // This allows us to do stuff like: health - damage
-        // it *implicitly* returns a float rather than the struct
-        public static implicit operator float(Health health)
-        {
-            return health.Value;
-        }
+        public float MaxValue;
     }
 
-    // The time the entity should be alive
+    /// <summary>
+    /// The lifetime of an entity
+    /// </summary>
     public struct LifeTime : IComponentData
     {
         public float Value;
-
-        // This allows us to do stuff like: lifeTime - deltaTime
-        // it *implicitly* returns a float rather than the struct
-        public static implicit operator float(LifeTime lifeTime)
-        {
-            return lifeTime.Value;
-        }
     }
 
-    // how much damage the entity should do
+    /// <summary>
+    /// Amount of damage to apply on hits and the damage type
+    /// </summary>
     public struct Damage : IComponentData
     {
         public float Value;
-
-        // This allows us to do stuff like: health - damage
-        // it *implicitly* returns a float rather than the struct
-        public static implicit operator float(Damage damage)
-        {
-            return damage.Value;
-        }
     }
 
-
-    // where an entity shoud look
-    // remove if the entity is destroyed
-    // probably use an entity/translation
-    public struct Target : IComponentData
+    public struct SpecialDamage : IComponentData
     {
+        public float Value;
+        public DamageType DamageType;
+    }
+
+    /// <summary>
+    /// Track target position
+    /// </summary>
+    public struct TrackPosition : IComponentData
+    {
+        public float3 Value;
+    }
+
+    /// <summary>
+    /// Track target Entity
+    /// </summary>
+    public struct TrackEntity : IComponentData
+    {
+        public Entity Value;
+    }
+
+    public struct TrackPlayer : IComponentData
+    {
+        public uint ID;
+
         public float3 Position;
     }
-
-    //****************************************************
-    //**********************TAGS**************************
-    //****************************************************
-
-    public struct DynamicTargetTag : IComponentData {}
-
-    // could set the entity to look at
-    // probably can just do this based on if a target's position has changed
-    public struct TargetDynamicPositionTag : IComponentData { }
-    public struct TargetStaticPositionTag : IComponentData { }
 }

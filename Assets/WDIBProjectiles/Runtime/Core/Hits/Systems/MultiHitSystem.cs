@@ -7,6 +7,7 @@ using Unity.Transforms;
 using UnityEngine;
 using WDIB.Components;
 using WDIB.Parameters;
+using WDIB.Projectiles;
 using WDIB.Utilities;
 
 namespace WDIB.Systems
@@ -14,12 +15,11 @@ namespace WDIB.Systems
     [UpdateInGroup(typeof(HitSystemGroup))]
     public class MultiHitSystem : JobComponentSystem
     {
-        private EntityManager eManager;
-        private EntityQuery m_MultiHitGroup;
-        private RaycastHit[] hits;
+        private EntityQuery MultiHitQuery;
+        private RaycastHit[] Hits;
 
-        private WeaponParameters wParameters;
-        private LayerMask hitMask;
+        private WeaponParameters Parameters;
+        private LayerMask HitMask;
 
         public delegate void HitMultiSystemEvent(HitHandlerData ecsData, NativeArray<RaycastHit> hitsData);
         public static HitMultiSystemEvent onMultiHitSystemFinish;
@@ -50,7 +50,7 @@ namespace WDIB.Systems
                     direction = math.forward(rotations[index].Value),
                     distance = math.distance(positions[index].Value, prevPositions[index].Value),
                     layerMask = hitLayer,
-                    maxHits = math.clamp(multiHits[index].maxHits - multiHits[index].hits, 0, multiHits[index].maxHits)
+                    maxHits = math.clamp(multiHits[index].MaxHits - multiHits[index].Hits, 0, multiHits[index].MaxHits)
                 };
             }
         }
@@ -58,14 +58,14 @@ namespace WDIB.Systems
         protected override JobHandle OnUpdate(JobHandle inputDeps)
         {
             // if there are no entities - return
-            int count = m_MultiHitGroup.CalculateLength();
+            int count = MultiHitQuery.CalculateEntityCount();
             if (count == 0)
             {
                 return inputDeps;
             }
 
             // Get the matching entities from the query
-            var entities = m_MultiHitGroup.ToEntityArray(Allocator.TempJob, out JobHandle entArrayHandle);
+            var entities = MultiHitQuery.ToEntityArray(Allocator.TempJob, out JobHandle entArrayHandle);
             entArrayHandle.Complete();
 
             // Setup Ray Commands
@@ -73,12 +73,12 @@ namespace WDIB.Systems
             JobHandle setupJob = new SetupCommandsJob
             {
                 // these get the data from the m_HitGroup query
-                prevPositions = m_MultiHitGroup.ToComponentDataArray<PreviousTranslation>(Allocator.TempJob),
-                positions = m_MultiHitGroup.ToComponentDataArray<Translation>(Allocator.TempJob),
-                rotations = m_MultiHitGroup.ToComponentDataArray<Rotation>(Allocator.TempJob),
+                prevPositions = MultiHitQuery.ToComponentDataArray<PreviousTranslation>(Allocator.TempJob),
+                positions = MultiHitQuery.ToComponentDataArray<Translation>(Allocator.TempJob),
+                rotations = MultiHitQuery.ToComponentDataArray<Rotation>(Allocator.TempJob),
                 commands = rayCommands,
-                hitLayer = hitMask,
-                multiHits = m_MultiHitGroup.ToComponentDataArray<MultiHit>(Allocator.TempJob)
+                hitLayer = HitMask,
+                multiHits = MultiHitQuery.ToComponentDataArray<MultiHit>(Allocator.TempJob)
             }.Schedule(count, 32, inputDeps);
 
             setupJob.Complete();
@@ -86,23 +86,23 @@ namespace WDIB.Systems
             #region Default raycast
             Ray ray;
             int hitCount;
-            uint projectileID;
+            int projectileID;
             HitHandlerData handlerData;
             // for every projectile
             for (int i = 0; i < count; i++)
             {
                 ray = new Ray { origin = rayCommands[i].from, direction = rayCommands[i].direction };
-                projectileID = eManager.GetComponentData<ProjectileID>(entities[i]).ID;
+                projectileID = EntityManager.GetComponentData<Projectile>(entities[i]).ID;
 
                 handlerData = new HitHandlerData
                 {
-                    entity = entities[i],
-                    projectileID = eManager.GetComponentData<ProjectileID>(entities[i]).ID,
-                    ownerID = eManager.GetComponentData<Owner>(entities[i]).ID
+                    Entity = entities[i],
+                    ProjectileID = EntityManager.GetComponentData<Projectile>(entities[i]).ID,
+                    OwnerID = EntityManager.GetComponentData<OwnerID>(entities[i]).Value
                 };
 
                 // if we have any hits
-                hitCount = Physics.RaycastNonAlloc(ray, hits, rayCommands[i].distance, rayCommands[i].layerMask);
+                hitCount = Physics.RaycastNonAlloc(ray, Hits, rayCommands[i].distance, rayCommands[i].layerMask);
                 if (hitCount > 0)
                 {
                     NativeArray<RaycastHit> tmpHits = new NativeArray<RaycastHit>(hitCount, Allocator.TempJob);
@@ -110,7 +110,7 @@ namespace WDIB.Systems
                     // for every hit
                     for(int j = 0; j < hitCount; j++)
                     {
-                        tmpHits[j] = hits[j];
+                        tmpHits[j] = Hits[j];
                     }
 
                     // call our individual multihit handler
@@ -129,22 +129,20 @@ namespace WDIB.Systems
 
         protected override void OnCreate()
         {
-            eManager = World.Active.EntityManager;
+            Parameters = WeaponParameters.Instance;
+            HitMask = Parameters.GetProjectileHitLayer();
 
-            wParameters = WeaponParameters.Instance;
-            hitMask = wParameters.GetProjectileHitLayer();
-
-            m_MultiHitGroup = GetEntityQuery(new EntityQueryDesc
+            MultiHitQuery = GetEntityQuery(new EntityQueryDesc
             {
                 All = new ComponentType[]
                 {
                 ComponentType.ReadOnly<PreviousTranslation>(), ComponentType.ReadOnly<Translation>(),
-                ComponentType.ReadOnly<Rotation>(), ComponentType.ReadOnly<Damage>(), ComponentType.ReadOnly<Owner>(),
+                ComponentType.ReadOnly<Rotation>(), ComponentType.ReadOnly<Damage>(), ComponentType.ReadOnly<OwnerID>(),
                 ComponentType.ReadWrite<MultiHit>()
                 }
             });
 
-            hits = new RaycastHit[40];
+            Hits = new RaycastHit[40];
         }
     }
 }

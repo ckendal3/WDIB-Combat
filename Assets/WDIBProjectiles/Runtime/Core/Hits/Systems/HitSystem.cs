@@ -7,6 +7,7 @@ using Unity.Transforms;
 using UnityEngine;
 using WDIB.Components;
 using WDIB.Parameters;
+using WDIB.Projectiles;
 using WDIB.Utilities;
 
 namespace WDIB.Systems
@@ -14,11 +15,10 @@ namespace WDIB.Systems
     [UpdateInGroup(typeof(HitSystemGroup))]
     public class HitSystem : JobComponentSystem
     {
-        private EntityQuery m_DetectHitGroup, m_hittableGroup;
-        private EntityManager eManager;
+        private EntityQuery DetectHitQuery;
 
-        private WeaponParameters wParameters;
-        private LayerMask hitMask;
+        private WeaponParameters Parameters;
+        private LayerMask HitMask;
 
         public delegate void HitSystemEvent(HitHandlerData handlerData, RaycastHit hit);
         public static HitSystemEvent onHitSystemFinish;
@@ -52,7 +52,7 @@ namespace WDIB.Systems
         protected override JobHandle OnUpdate(JobHandle inputDeps)
         {
             // make sure we have entities
-            int count = m_DetectHitGroup.CalculateLength();
+            int count = DetectHitQuery.CalculateEntityCount();
             if (count == 0)
             {
                 return inputDeps;
@@ -61,16 +61,16 @@ namespace WDIB.Systems
             NativeArray<RaycastCommand> commands = new NativeArray<RaycastCommand>(count, Allocator.TempJob);
             var setupCommandsJob = new SetupCommandsJob
             {
-                prevPositions = m_DetectHitGroup.ToComponentDataArray<PreviousTranslation>(Allocator.TempJob),
-                curPositions = m_DetectHitGroup.ToComponentDataArray<Translation>(Allocator.TempJob),
-                rotations = m_DetectHitGroup.ToComponentDataArray<Rotation>(Allocator.TempJob),
+                prevPositions = DetectHitQuery.ToComponentDataArray<PreviousTranslation>(Allocator.TempJob),
+                curPositions = DetectHitQuery.ToComponentDataArray<Translation>(Allocator.TempJob),
+                rotations = DetectHitQuery.ToComponentDataArray<Rotation>(Allocator.TempJob),
                 cmds = commands,
-                hitMask = wParameters.GetProjectileHitLayer()
+                hitMask = Parameters.GetProjectileHitLayer()
             }.Schedule(count, 1, inputDeps);
 
             setupCommandsJob.Complete();
 
-            NativeArray<Entity> entities = m_DetectHitGroup.ToEntityArray(Allocator.TempJob, out JobHandle entitiesHandle);
+            NativeArray<Entity> entities = DetectHitQuery.ToEntityArray(Allocator.TempJob, out JobHandle entitiesHandle);
             entitiesHandle.Complete();
 
             #region Default Physics
@@ -94,9 +94,9 @@ namespace WDIB.Systems
 
                     handlerData = new HitHandlerData
                     {
-                        entity = entities[i],
-                        projectileID = eManager.GetComponentData<ProjectileID>(entities[i]).ID,
-                        ownerID = eManager.GetComponentData<Owner>(entities[i]).ID
+                        Entity = entities[i],
+                        ProjectileID = EntityManager.GetComponentData<Projectile>(entities[i]).ID,
+                        OwnerID = EntityManager.GetComponentData<OwnerID>(entities[i]).Value
                     };
 
                     onHitSystemFinish?.Invoke(handlerData, hit);
@@ -112,16 +112,14 @@ namespace WDIB.Systems
 
         protected override void OnCreate()
         {
-            eManager = World.Active.EntityManager;
+            Parameters = WeaponParameters.Instance;
+            HitMask = Parameters.GetProjectileHitLayer();
 
-            wParameters = WeaponParameters.Instance;
-            hitMask = wParameters.GetProjectileHitLayer();
-
-            m_DetectHitGroup = GetEntityQuery(new EntityQueryDesc
+            DetectHitQuery = GetEntityQuery(new EntityQueryDesc
             {
                 All = new ComponentType[] { ComponentType.ReadOnly<PreviousTranslation>(), ComponentType.ReadOnly<Translation>(),
                 ComponentType.ReadOnly<Rotation>(),  ComponentType.ReadWrite<Damage>(), ComponentType.ReadWrite<Distance>(),
-                ComponentType.ReadOnly<ProjectileID>()
+                ComponentType.ReadOnly<Projectile>()
             },
                 None = new ComponentType[] { ComponentType.ReadOnly<MultiHit>() }
             });

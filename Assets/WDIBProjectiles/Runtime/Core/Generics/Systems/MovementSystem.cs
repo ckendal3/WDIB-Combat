@@ -18,7 +18,7 @@ namespace WDIB.Systems
         {
             public void Execute([ReadOnly] ref Translation currentPos, [WriteOnly] ref PreviousTranslation previousPos)
             {
-                previousPos.Value = currentPos.Value;
+                previousPos = new PreviousTranslation { Value = currentPos.Value };
             }
         }
 
@@ -29,7 +29,7 @@ namespace WDIB.Systems
 
             public void Execute(ref Translation position, [ReadOnly] ref Rotation rotation, [ReadOnly] ref Speed speed)
             {
-                float3 newPos = position.Value + (deltaTime * speed) * math.forward(rotation.Value);
+                float3 newPos = position.Value + (deltaTime * speed.Value) * math.forward(rotation.Value);
 
                 position.Value = newPos;
             }

@@ -2,53 +2,53 @@
 using UnityEngine;
 using WDIB.Components;
 
-public class InputSystem : ComponentSystem
+namespace WDIB.Inputs
 {
-    private EntityQuery m_InputGroup;
-
-    protected override void OnUpdate()
+    public class InputSystem : ComponentSystem
     {
-        int count = m_InputGroup.CalculateLength();
+        private EntityQuery m_InputGroup;
 
-        if(count < 1)
+        protected override void OnUpdate()
         {
-            return;
+            int count = m_InputGroup.CalculateEntityCount();
+
+            if (count == 0)
+            {
+                return;
+            }
+            // TODO: Start setting inputstates 
+            // TODO: Implement Local only input
+            // TODO: Implement Network only input
+            Entities.ForEach((ref InputState input) =>
+            {
+                // if our input is great than 0 
+                input.IsPrimaryAction = Input.GetKey(KeyCode.Mouse0);
+                // if our input is great than 0 
+                input.IsSecondaryAction = Input.GetKey(KeyCode.Mouse1);
+
+                // TODO: implement axis buttons for these specific buttons
+                input.IsCrouching = Input.GetKey(KeyCode.LeftControl);
+                input.IsJumping = Input.GetKey(KeyCode.Space);
+                input.IsReloading = Input.GetKey(KeyCode.R);
+
+                #region Movement Input
+                input.MovementInput.x = Input.GetAxis("Horizontal");
+                input.MovementInput.y = Input.GetAxis("Vertical");
+                #endregion
+
+                #region Rotation Input
+                input.RotationInput.x = Input.GetAxis("Mouse X");
+                input.RotationInput.y = Input.GetAxis("Mouse Y");
+                #endregion
+            });
         }
 
-        // TODO: Start setting inputstates 
-        // TODO: Implement Local only input
-        // TODO: Implement Network only input
-        Entities.ForEach((ref InputState input) =>
+        protected override void OnCreate()
         {
-            // if our input is great than 0 
-            input.isPrimaryAction = Input.GetKey(KeyCode.Mouse0);
-            // if our input is great than 0 
-            input.isSecondaryAction = Input.GetKey(KeyCode.Mouse1);
-
-            // TODO: implement axis buttons for these specific buttons
-            input.isCrouching = Input.GetKey(KeyCode.LeftControl);
-            input.isJumping = Input.GetKey(KeyCode.Space);
-            input.isPulling = Input.GetKey(KeyCode.E);
-            input.isPushing = Input.GetKey(KeyCode.Q);
-            input.isReloading = Input.GetKey(KeyCode.R);
-
-            #region Movement Input
-            input.movementInput.x = Input.GetAxis("Horizontal");
-            input.movementInput.y = Input.GetAxis("Vertical");
-            #endregion
-
-            #region Rotation Input
-            input.rotationInput.x = Input.GetAxis("Mouse X");
-            input.rotationInput.y = Input.GetAxis("Mouse Y");
-            #endregion
-        });
-    }
-
-    protected override void OnCreate()
-    {
-        m_InputGroup = GetEntityQuery(new EntityQueryDesc()
-        {
-            All = new ComponentType[] { ComponentType.ReadWrite<InputState>(), ComponentType.ReadOnly<Owner>() }
-        });
+            m_InputGroup = GetEntityQuery(new EntityQueryDesc()
+            {
+                All = new ComponentType[] { ComponentType.ReadWrite<InputState>(), ComponentType.ReadOnly<OwnerID>() }
+            });
+        }
     }
 }

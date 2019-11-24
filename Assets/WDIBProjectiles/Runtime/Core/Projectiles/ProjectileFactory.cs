@@ -9,15 +9,16 @@ using UnityEngine;
 using Random = Unity.Mathematics.Random;
 using Unity.Burst;
 using Unity.Jobs;
+using WDIB.Explosives;
 
-namespace WDIB.Factory
+namespace WDIB.Projectiles
 {
     public static class ProjectileFactory
     {
-        static EntityManager eManager;
-        static EntityArchetype projectileArch;
+        static EntityManager EntityManager;
+        static EntityArchetype Archetype;
 
-        static WeaponParameters wParameters;
+        static WeaponParameters Parameters;
 
         private static Random random;
 
@@ -29,17 +30,17 @@ namespace WDIB.Factory
 
         static ProjectileFactory()
         {
-            eManager = World.Active.EntityManager;
+            EntityManager = World.Active.EntityManager;
 
             // create our archetype
-            projectileArch = eManager.CreateArchetype(                                                               // probably could just get away with Scale component
+            Archetype = EntityManager.CreateArchetype(                                                               // probably could just get away with Scale component
                                         ComponentType.ReadWrite<Translation>(), ComponentType.ReadWrite<Rotation>(), ComponentType.ReadWrite<NonUniformScale>(), 
                                         ComponentType.ReadWrite<PreviousTranslation>(), ComponentType.ReadWrite<Speed>(), ComponentType.ReadWrite<Damage>(), 
-                                        ComponentType.ReadWrite<ProjectileID>(), ComponentType.ReadWrite<Owner>(), ComponentType.ReadWrite<Distance>(),
+                                        ComponentType.ReadWrite<Projectile>(), ComponentType.ReadWrite<OwnerID>(), ComponentType.ReadWrite<Distance>(),
                                         ComponentType.ReadOnly<LocalToWorld>(), ComponentType.ReadWrite<RenderMesh>()
                                         );
 
-            wParameters = WeaponParameters.Instance;
+            Parameters = WeaponParameters.Instance;
         }
 
         /// <summary>
@@ -64,7 +65,7 @@ namespace WDIB.Factory
             debugIndividualID = 0;
             #endif
 
-            SetComponents(projectileID, spawnPos, spawnRot, wParameters.GetProjectileDataByID(projectileID), ownerID);
+            SetComponents(projectileID, spawnPos, spawnRot, Parameters.GetProjectileDataByID(projectileID), ownerID);
         }
 
         /// <summary>
@@ -80,27 +81,27 @@ namespace WDIB.Factory
             Entity templateEnt;
 
             // create the entity to clone from
-            templateEnt = eManager.CreateEntity(projectileArch);
+            templateEnt = EntityManager.CreateEntity(Archetype);
 
 
             #if UNITY_EDITOR
             debugIndividualID += 1;
-            eManager.SetName(templateEnt, data.projectileName + " Projectile " + debugIndividualID + " - Group " + debugGroupID);
+            EntityManager.SetName(templateEnt, data.projectileName + " Projectile " + debugIndividualID + " - Group " + debugGroupID);
             #endif
 
             //Generic Components
-            eManager.SetComponentData(templateEnt, new Translation { Value = spawnPos });
-            eManager.SetComponentData(templateEnt, new Rotation { Value = spawnRot });
-            eManager.SetComponentData(templateEnt, new NonUniformScale { Value = new float3(1, 1, data.length) });
-            eManager.SetSharedComponentData(templateEnt, new RenderMesh { mesh = data.mesh, material = data.material });
+            EntityManager.SetComponentData(templateEnt, new Translation { Value = spawnPos });
+            EntityManager.SetComponentData(templateEnt, new Rotation { Value = spawnRot });
+            EntityManager.SetComponentData(templateEnt, new NonUniformScale { Value = new float3(1, 1, data.length) });
+            EntityManager.SetSharedComponentData(templateEnt, new RenderMesh { mesh = data.mesh, material = data.material });
 
             // specific components
-            eManager.SetComponentData(templateEnt, new PreviousTranslation { Value = spawnPos });
-            eManager.SetComponentData(templateEnt, new Owner { ID = ownerID });
-            eManager.SetComponentData(templateEnt, new Distance { Value = 0, MaxDistance = data.maxDistance });
-            eManager.SetComponentData(templateEnt, new Damage { Value = data.damage });
-            eManager.SetComponentData(templateEnt, new Speed { Value = data.speed });
-            eManager.SetComponentData(templateEnt, new ProjectileID { ID = (uint)projectileID });
+            EntityManager.SetComponentData(templateEnt, new PreviousTranslation { Value = spawnPos });
+            EntityManager.SetComponentData(templateEnt, new OwnerID { Value = ownerID });
+            EntityManager.SetComponentData(templateEnt, new Distance { Value = 0, MaxDistance = data.maxDistance });
+            EntityManager.SetComponentData(templateEnt, new Damage { Value = data.damage });
+            EntityManager.SetComponentData(templateEnt, new Speed { Value = data.speed });
+            EntityManager.SetComponentData(templateEnt, new Projectile { ID = projectileID });
 
             // Add extra components specified in the projectile data
             if (data.componentData != null && data.componentData.Length > 0)
@@ -121,13 +122,13 @@ namespace WDIB.Factory
 
                 // creating and destroying entities is batched
                 // we are cloning the entity so all components have the same value
-                eManager.Instantiate(templateEnt, cloneEnts);
+                EntityManager.Instantiate(templateEnt, cloneEnts);
 
                 // get random spreads
                 GetConeOfFire(data, spawnRot, projectileCount, out NativeArray<quaternion> rSpreads);
 
                 // We need to add random spread to the first projectile
-                eManager.SetComponentData(templateEnt, new Rotation { Value = rSpreads[0] });
+                EntityManager.SetComponentData(templateEnt, new Rotation { Value = rSpreads[0] });
 
                 // we start at one because set our templateEnt to the first spread
                 for (int i = 1; i < projectileCount; i++)
@@ -135,12 +136,12 @@ namespace WDIB.Factory
                     #region Entity Debugging
 #if UNITY_EDITOR
                     debugIndividualID += 1;
-                    eManager.SetName(cloneEnts[i - 1], data.projectileName + " Projectile " + debugIndividualID + " - Group " + debugGroupID);
+                    EntityManager.SetName(cloneEnts[i - 1], data.projectileName + " Projectile " + debugIndividualID + " - Group " + debugGroupID);
 #endif
                     #endregion
 
                     // we subtract one because our cloned projectiles need to iterate starting at zero
-                    eManager.SetComponentData(cloneEnts[i - 1], new Rotation { Value = rSpreads[i] });
+                    EntityManager.SetComponentData(cloneEnts[i - 1], new Rotation { Value = rSpreads[i] });
                 }
 
                 //we have set all our data, dispose our native container to avoid memory leak
@@ -187,6 +188,7 @@ namespace WDIB.Factory
         }
 
 
+        // TODO: DYNAMIC component data adding for all factories
         /// <summary>
         /// Retrieve the components specified in the data and add them to the projectiles
         /// </summary>
@@ -197,22 +199,22 @@ namespace WDIB.Factory
             switch (data.componentType)
             {
                 case EComponentType.HeadShot:
-                    eManager.AddComponentData(entity, (HeadShotMultiplier)data.GetComponentData());
+                    EntityManager.AddComponentData(entity, (HeadShotMultiplier)data.GetComponentData());
                     return;
                 case EComponentType.MultiHit:
-                    eManager.AddComponentData(entity, (MultiHit)data.GetComponentData());
+                    EntityManager.AddComponentData(entity, (MultiHit)data.GetComponentData());
                     return;
                 case EComponentType.EMP:
                     Debug.LogWarning("EMP is not yet implemented.");
                     return;
                 case EComponentType.SuperCombine:
-                    eManager.AddComponentData(entity, (SuperCombine)data.GetComponentData());
+                    EntityManager.AddComponentData(entity, (SuperCombine)data.GetComponentData());
                     return;
                 case EComponentType.Tracking:
-                    eManager.AddComponentData(entity, (TrackPlayer)data.GetComponentData());
+                    EntityManager.AddComponentData(entity, (TrackPlayer)data.GetComponentData());
                     return;
                 case EComponentType.Explosive:
-                    eManager.AddComponentData(entity, (Explosive)data.GetComponentData());
+                    EntityManager.AddComponentData(entity, (Explosive)data.GetComponentData());
                     return;
                 case EComponentType.NotImplemented:
                     Debug.Log("Not yet immplemented.");

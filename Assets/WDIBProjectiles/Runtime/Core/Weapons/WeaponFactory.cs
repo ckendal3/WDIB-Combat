@@ -4,14 +4,14 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using WDIB.Components;
 
-namespace WDIB.Factory
+namespace WDIB.Weapons
 {
     public static class WeaponFactory
     {
-        static EntityManager eManager;
-        static EntityArchetype weaponArch;
+        static EntityManager EntityManager;
+        static EntityArchetype Archetype;
 
-        static WeaponParameters wParameters;
+        static WeaponParameters Parameters;
 
         // use for debugging
 #if UNITY_EDITOR
@@ -21,17 +21,17 @@ namespace WDIB.Factory
 
         static WeaponFactory()
         {
-            eManager = World.Active.EntityManager;
+            EntityManager = World.Active.EntityManager;
 
             // create our archetype
-            weaponArch = eManager.CreateArchetype(                                                               
+            Archetype = EntityManager.CreateArchetype(                                                               
                                         ComponentType.ReadWrite<Translation>(), ComponentType.ReadWrite<Rotation>(),
-                                        ComponentType.ReadWrite<Weapon>(), ComponentType.ReadWrite<Owner>(),
+                                        ComponentType.ReadWrite<Weapon>(), ComponentType.ReadWrite<OwnerID>(),
                                         ComponentType.ReadOnly<LocalToWorld>(), ComponentType.ReadWrite<TimeBetweenShots>(),
-                                        ComponentType.ReadWrite<WeaponState>(), ComponentType.ReadWrite<MuzzleOffset>()
+                                        ComponentType.ReadWrite<WeaponState>(), ComponentType.ReadWrite<ShootFromOffset>()
                                         );
 
-            wParameters = WeaponParameters.Instance;
+            Parameters = WeaponParameters.Instance;
         }
 
         /// <summary>
@@ -59,9 +59,9 @@ namespace WDIB.Factory
             Entity weaponEntity;
 
             // create the entity to clone from
-            weaponEntity = eManager.CreateEntity(weaponArch);
+            weaponEntity = EntityManager.CreateEntity(Archetype);
 
-            SetComponents(ref weaponEntity, weaponID, spawnPos, spawnRot, wParameters.GetWeaponDataByID(weaponID), ownerID, shootFromOffset);
+            SetComponents(ref weaponEntity, weaponID, spawnPos, spawnRot, Parameters.GetWeaponDataByID(weaponID), ownerID, shootFromOffset);
 
             return weaponEntity;
         }
@@ -74,31 +74,22 @@ namespace WDIB.Factory
         private static void SetComponents(ref Entity entity, int weaponID, float3 spawnPos, quaternion spawnRot, WeaponData data, uint ownerID, float3 offsetPos)
         {
             #region Template Weapon Entity
-            
-
-
 #if UNITY_EDITOR
             debugIndividualID += 1;
-            eManager.SetName(entity, data.weaponName + " Weapon " + debugIndividualID + " - Group " + debugGroupID);
+            EntityManager.SetName(entity, data.weaponName + " Weapon " + debugIndividualID + " - Group " + debugGroupID);
 #endif
 
             //Generic Components
-            eManager.SetComponentData(entity, new Translation { Value = spawnPos });
-            eManager.SetComponentData(entity, new Rotation { Value = spawnRot });
+            EntityManager.SetComponentData(entity, new Translation { Value = spawnPos });
+            EntityManager.SetComponentData(entity, new Rotation { Value = spawnRot });
 
             // specific components
-            eManager.SetComponentData(entity, new Owner { ID = ownerID });
-            eManager.SetComponentData(entity, new Weapon { ID = weaponID });
-            eManager.SetComponentData(entity, new TimeBetweenShots { value = 0, resetValue = data.timeBetweenShots });
-            eManager.SetComponentData(entity, new WeaponState { isReloading = false, isShooting = false });
-            eManager.SetComponentData(entity, new MuzzleOffset { Value = data.muzzleOffset});
+            EntityManager.SetComponentData(entity, new OwnerID { Value = ownerID });
+            EntityManager.SetComponentData(entity, new Weapon { ID = weaponID });
+            EntityManager.SetComponentData(entity, new TimeBetweenShots { Value = 0, ResetValue = data.timeBetweenShots });
+            EntityManager.SetComponentData(entity, new WeaponState { IsReloading = false, IsShooting = false });
+            EntityManager.SetComponentData(entity, new ShootFromOffset { Value = 0, Offset = offsetPos, Heading = math.normalize(spawnPos - offsetPos) });
             #endregion
         }
     }
-}
-
-public enum ShootFromType
-{
-    barrel,
-    player
 }

@@ -5,31 +5,33 @@ using Unity.Entities;
 using Unity.Jobs;
 using UnityEngine;
 
-public class TimeBetweenShotsSystem : JobComponentSystem
+namespace WDIB.Weapons
 {
-    public struct DecreaseTimeJob : IJobForEach<Weapon, TimeBetweenShots>
+    public class TimeBetweenShotsSystem : JobComponentSystem
     {
-        public float deltaTime;
-
-        public void Execute([ReadOnly]ref Weapon weapon, ref TimeBetweenShots tBS)
+        public struct DecreaseTimeJob : IJobForEach<Weapon, TimeBetweenShots>
         {
+            public float deltaTime;
 
-            // stop reducing at -1 just to avoid a possible overflow
-            if(tBS.value < -1)
+            public void Execute([ReadOnly]ref Weapon weapon, ref TimeBetweenShots timeBetween)
             {
-                return;
-            }
 
-            tBS.value -= deltaTime;
+                // stop reducing at -1 just to avoid a possible overflow
+                if (timeBetween.Value < -1)
+                {
+                    return;
+                }
+
+                timeBetween.Value -= deltaTime;
+            }
+        }
+
+        protected override JobHandle OnUpdate(JobHandle inputDeps)
+        {
+            return new DecreaseTimeJob()
+            {
+                deltaTime = Time.deltaTime
+            }.Schedule(this, inputDeps);
         }
     }
-
-    protected override JobHandle OnUpdate(JobHandle inputDeps)
-    {
-        return new DecreaseTimeJob()
-        {
-            deltaTime = Time.deltaTime
-        }.Schedule(this, inputDeps);
-    }
-
 }

@@ -4,6 +4,7 @@ using Unity.Entities;
 using Unity.Jobs;
 using WDIB.Components;
 using WDIB.Parameters;
+using WDIB.Projectiles;
 using WDIB.Utilities;
 
 namespace WDIB.Systems
@@ -12,12 +13,12 @@ namespace WDIB.Systems
     [UpdateAfter(typeof(LifeTimeSystem))]
     public class DestroySystem : JobComponentSystem
     {
-        float globalMaxDistance;
+        private float MaxDistance;
 
         [BurstCompile]
         public struct CollectExceededLifetimeJob : IJobForEachWithEntity<LifeTime>
         {
-            [WriteOnly] public NativeQueue<Entity>.Concurrent entQueue;
+            [WriteOnly] public NativeQueue<Entity>.ParallelWriter entQueue;
 
             public void Execute(Entity entity, int index, [ReadOnly] ref LifeTime life)
             {
@@ -31,7 +32,7 @@ namespace WDIB.Systems
         [BurstCompile]
         public struct CollectExceededDistanceJob : IJobForEachWithEntity<Distance>
         {
-            [WriteOnly] public NativeQueue<Entity>.Concurrent entQueue;
+            [WriteOnly] public NativeQueue<Entity>.ParallelWriter entQueue;
             public float jobMaxDistance;
 
             public void Execute(Entity entity, int index, [ReadOnly] ref Distance distance)
@@ -46,11 +47,11 @@ namespace WDIB.Systems
         [BurstCompile]
         public struct CollectExceededHitJob : IJobForEachWithEntity<MultiHit>
         {
-            [WriteOnly] public NativeQueue<Entity>.Concurrent entQueue;
+            [WriteOnly] public NativeQueue<Entity>.ParallelWriter entQueue;
 
             public void Execute(Entity entity, int index, ref MultiHit hitComponent)
             {
-                if (hitComponent.hits >= hitComponent.maxHits)
+                if (hitComponent.Hits >= hitComponent.MaxHits)
                 {
                     entQueue.Enqueue(entity);
                 }
@@ -75,29 +76,27 @@ namespace WDIB.Systems
 
         protected override JobHandle OnUpdate(JobHandle inputDeps)
         {
-            globalMaxDistance = WeaponParameters.Instance.GetProjectileMaximumDistance(); // this will be removed after debugging
-
             // Get the things we need to destroy
             NativeQueue<Entity> destroyQueue = new NativeQueue<Entity>(Allocator.TempJob);
 
             var collectLifeTimeJob = new CollectExceededLifetimeJob
             {
-                entQueue = destroyQueue.ToConcurrent()
+                entQueue = destroyQueue.AsParallelWriter()
             }.Schedule(this, inputDeps);
 
             collectLifeTimeJob.Complete();
 
             var collectDistanceJob = new CollectExceededDistanceJob
             {
-                entQueue = destroyQueue.ToConcurrent(),
-                jobMaxDistance = globalMaxDistance
+                entQueue = destroyQueue.AsParallelWriter(),
+                jobMaxDistance = MaxDistance
             }.Schedule(this, inputDeps);
 
             collectDistanceJob.Complete();
 
             var multiHitCheckJob = new CollectExceededHitJob
             {
-                entQueue = destroyQueue.ToConcurrent()
+                entQueue = destroyQueue.AsParallelWriter()
             }.Schedule(this, inputDeps);
 
             multiHitCheckJob.Complete();
@@ -127,7 +126,7 @@ namespace WDIB.Systems
 
         protected override void OnCreate()
         {
-            globalMaxDistance = WeaponParameters.Instance.GetProjectileMaximumDistance();
+            MaxDistance = WeaponParameters.Instance.GetProjectileMaximumDistance();
         }
     }
 }

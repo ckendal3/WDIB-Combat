@@ -2,13 +2,14 @@
 using Unity.Entities;
 using UnityEngine;
 using WDIB.Components;
-using WDIB.Factory;
+using WDIB.Explosives;
+using WDIB.Interfaces;
 using WDIB.Parameters;
+using WDIB.Projectiles;
 using WDIB.Systems;
 
 //TODO: Implement Hit Visuals
 //TODO: Implment physics hits/forces
-//TODO: Change owner IDs from uints to ints?
 //TODO: Implement Impulse force and damage based on distance for explosions
 //TODO: Destroy/Stop multi-hit projectiles on environmental hit, continue on soft target hits
 
@@ -16,19 +17,19 @@ namespace WDIB.Utilities
 {
     public static class HitHandlerSystem
     {
-        private static EntityManager eManager;
-        private static WeaponParameters wParameters;
+        private static EntityManager EntityManager;
+        private static WeaponParameters Parameters;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            eManager = World.Active.EntityManager;
+            EntityManager = World.Active.EntityManager;
 
             HitSystem.onHitSystemFinish += OnHitSystemEvent;
             MultiHitSystem.onMultiHitSystemFinish += OnMultiHitSystemEvent;
             ExplosiveSystem.onExplosionHitSystemFinish += OnExplosiveSystemEvent;
 
-            wParameters = WeaponParameters.Instance;
+            Parameters = WeaponParameters.Instance;
         }
 
         /// <summary>
@@ -37,17 +38,17 @@ namespace WDIB.Utilities
         /// <param name="hitData"></param>
         public static void OnHitSystemEvent(HitHandlerData handlerData, RaycastHit hit)
         {
-            ProjectileData data = wParameters.GetProjectileDataByID((int)eManager.GetComponentData<ProjectileID>(handlerData.entity).ID);
+            ProjectileData data = Parameters.GetProjectileDataByID(EntityManager.GetComponentData<Projectile>(handlerData.Entity).ID);
 
-            float damage = eManager.GetComponentData<Damage>(handlerData.entity).Value;
-            int ownerID = (int)eManager.GetComponentData<Owner>(handlerData.entity).ID;
+            float damage = EntityManager.GetComponentData<Damage>(handlerData.Entity).Value;
+            uint ownerID = EntityManager.GetComponentData<OwnerID>(handlerData.Entity).Value;
 
             TryToApplyDamage(damage, ownerID, hit.collider);
 
             //TryToApplyForce();
             CreateHitVisual();
 
-            DestroyEntity(ref handlerData.entity);
+            DestroyEntity(handlerData.Entity);
 
         }
 
@@ -58,11 +59,11 @@ namespace WDIB.Utilities
         public static void OnMultiHitSystemEvent(HitHandlerData ecsData, NativeArray<RaycastHit> hitData)
         {
             RaycastHit hit;
-            Entity entity = ecsData.entity;
-            bool canExplode = eManager.HasComponent<Explosive>(entity);
-            MultiHit multiComponent = eManager.GetComponentData<MultiHit>(entity);
-            uint ownerID = eManager.GetComponentData<Owner>(entity).ID;
-            float damage = eManager.GetComponentData<Damage>(entity).Value;
+            Entity entity = ecsData.Entity;
+            bool canExplode = EntityManager.HasComponent<Explosive>(entity);
+            MultiHit multiComponent = EntityManager.GetComponentData<MultiHit>(entity);
+            uint ownerID = EntityManager.GetComponentData<OwnerID>(entity).Value;
+            float damage = EntityManager.GetComponentData<Damage>(entity).Value;
 
             // for every hit
             for (int i = 0; i < hitData.Length; i++)
@@ -71,12 +72,12 @@ namespace WDIB.Utilities
 
                 if (canExplode)
                 {
-                    AddExplosion(ref entity, hit.point, ownerID);
+                    AddExplosion(entity, hit.point, ownerID);
                 }
 
-                eManager.SetComponentData(entity, new MultiHit { hits = multiComponent.hits + 1, maxHits = multiComponent.maxHits });
+                EntityManager.SetComponentData(entity, new MultiHit { Hits = multiComponent.Hits + 1, MaxHits = multiComponent.MaxHits });
 
-                TryToApplyDamage(damage, (int)ownerID, hit.collider);
+                TryToApplyDamage(damage, ownerID, hit.collider);
                 //TryToApplyForce();
                 CreateHitVisual();
             }
@@ -92,13 +93,13 @@ namespace WDIB.Utilities
                 Collider collider;
 
                 // for every hit from the explosion
-                for (int j = 0; j < data.colliders.Length; j++)
+                for (int j = 0; j < data.Colliders.Length; j++)
                 {
-                    collider = data.colliders[j];
+                    collider = data.Colliders[j];
 
-                    ExplosiveData eData = WeaponParameters.Instance.GetExplosiveDataByID(hitData[i].explosiveID);
+                    ExplosiveData eData = WeaponParameters.Instance.GetExplosiveDataByID(hitData[i].ExplosiveID);
 
-                    TryToApplyDamage(eData.damage, data.ownerID, collider);
+                    TryToApplyDamage(eData.damage, data.OwnerID, collider);
                     //TryToApplyForce();
                     CreateHitVisual();
                 }
@@ -106,7 +107,7 @@ namespace WDIB.Utilities
             }
         }
 
-        private static void TryToApplyDamage(float damage, int ownerID, Collider collider) //ref Entity entity, Collider collider
+        private static void TryToApplyDamage(float damage, uint ownerID, Collider collider) //ref Entity entity, Collider collider
         {
             // if there is no damageable interface - don't do anything else
             IDamageable damageable = collider.GetComponent<IDamageable>();
@@ -118,7 +119,7 @@ namespace WDIB.Utilities
             damageable.ApplyDamage(damage, ownerID);
         }
 
-        private static void TryToApplyForce(ref Entity entity, Collider collider) //ref Entity entity, Collider collider
+        private static void TryToApplyForce(Entity entity, Collider collider) //ref Entity entity, Collider collider
         {
             // if there is no physicsable interface - don't do anything else
             IPhysicsable physicsable = collider.GetComponent<IPhysicsable>();
@@ -128,13 +129,13 @@ namespace WDIB.Utilities
             }
 
             //TODO: Change owners to uints or ints?
-            float force = eManager.GetComponentData<Damage>(entity).Value; // use damage as force for now
-            int ownerID = (int)eManager.GetComponentData<Owner>(entity).ID;
+            float force = EntityManager.GetComponentData<Damage>(entity).Value; // use damage as force for now
+            int ownerID = (int)EntityManager.GetComponentData<OwnerID>(entity).Value;
 
             physicsable.AddForce(force);
         }
 
-        private static void TryToApplyImpulseForce(ref Entity entity, Collider collider) //ref Entity entity, Collider collider
+        private static void TryToApplyImpulseForce(Entity entity, Collider collider) //ref Entity entity, Collider collider
         {
             // if there is no physicsable interface - don't do anything else
             IPhysicsable physicsable = collider.GetComponent<IPhysicsable>();
@@ -143,8 +144,8 @@ namespace WDIB.Utilities
                 return;
             }
 
-            float force = eManager.GetComponentData<Damage>(entity).Value;
-            int ownerID = (int)eManager.GetComponentData<Owner>(entity).ID;
+            float force = EntityManager.GetComponentData<Damage>(entity).Value;
+            int ownerID = (int)EntityManager.GetComponentData<OwnerID>(entity).Value;
 
             physicsable.AddImpulseForce(force, ownerID);
         }
@@ -160,30 +161,30 @@ namespace WDIB.Utilities
             VisualHitParameters.Instance.GetHitVFXDataByType(visualsID, MaterialType.Dirt); // MaterialType.Dirt should be gathered from the hit
         }
 
-        private static void AddExplosion(ref Entity entity, Vector3 hitPoint, uint ownerID)
+        private static void AddExplosion(Entity entity, Vector3 hitPoint, uint ownerID)
         {
-            Explosive explosive = eManager.GetComponentData<Explosive>(entity);
+            Explosive explosive = EntityManager.GetComponentData<Explosive>(entity);
             ExplosiveFactory.CreateExplosive((int)explosive.ID, hitPoint, ownerID);
         }
 
-        private static void DestroyEntity(ref Entity entity)
+        private static void DestroyEntity(Entity entity)
         {
-            eManager.SetComponentData(entity, new Distance { Value = 1000, MaxDistance = 0 });
+            EntityManager.SetComponentData(entity, new Distance { Value = 1000, MaxDistance = 0 });
         }
 
     }
 
     public struct HitHandlerData
     {
-        public Entity entity;
-        public uint projectileID;
-        public uint ownerID;
+        public Entity Entity;
+        public int ProjectileID;
+        public uint OwnerID;
     }
 
     public struct ECSExplosiveData
     {
-        public int ownerID; // the player(?) that caused the explosion
-        public int explosiveID; // the explosion data
-        public Collider[] colliders; // all the things this explosion hit
+        public int ExplosiveID; // the explosion data
+        public uint OwnerID; // the player(?) that caused the explosion
+        public Collider[] Colliders; // all the things this explosion hit
     }
 }

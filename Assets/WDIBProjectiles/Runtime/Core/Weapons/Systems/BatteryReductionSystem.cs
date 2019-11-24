@@ -1,13 +1,16 @@
 ﻿using Unity.Entities;
 
-public class BatteryReductionSystem : ComponentSystem
+namespace WDIB.Weapons
 {
-    protected override void OnUpdate()
+    public class BatteryReductionSystem : ComponentSystem
     {
-        Entities.WithAll<ReduceBatteryTag, Weapon>().ForEach((Entity entity, ref BatteryComponent battery) =>
+        protected override void OnUpdate()
         {
-            battery.value -= 1;
-            World.Active.EntityManager.RemoveComponent<ReduceBatteryTag>(entity);
-        });
+            Entities.WithAll<ReduceBatteryTag, Weapon>().ForEach((Entity entity, ref BatteryComponent battery) =>
+            {
+                battery.value -= 1;
+                World.Active.EntityManager.RemoveComponent<ReduceBatteryTag>(entity);
+            });
+        }
     }
 }
