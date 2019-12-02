@@ -6,22 +6,22 @@ namespace WDIB.Weapons
     {
         public static EntityArchetype GetBaseAmmoWeaponArchetype()
         {
-            return World.Active.EntityManager.CreateArchetype(
-                typeof(Weapon), typeof(Reload), typeof(AmmoComponent),
+            return World.DefaultGameObjectInjectionWorld.EntityManager.CreateArchetype(
+                typeof(Weapon), typeof(AmmoComponent),
                 typeof(MeleeComponent), typeof(TimeBetweenShots));
         }
 
         public static EntityArchetype GetBaseBatteryWeaponArchetype()
         {
-            return World.Active.EntityManager.CreateArchetype(
-                typeof(Weapon), typeof(Reload), typeof(BatteryComponent),
+            return World.DefaultGameObjectInjectionWorld.EntityManager.CreateArchetype(
+                typeof(Weapon), typeof(BatteryComponent),
                 typeof(MeleeComponent), typeof(TimeBetweenShots));
         }
 
 
         public static EntityArchetype GetBaseMeleeWeaponArchetype()
         {
-            return World.Active.EntityManager.CreateArchetype(typeof(Weapon), typeof(MeleeComponent), typeof(TimeBetweenShots));
+            return World.DefaultGameObjectInjectionWorld.EntityManager.CreateArchetype(typeof(Weapon), typeof(MeleeComponent), typeof(TimeBetweenShots));
         }
     }
 }

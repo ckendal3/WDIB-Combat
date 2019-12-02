@@ -20,7 +20,7 @@ namespace WDIB.Explosives
 
         static ExplosiveFactory()
         {
-            EntityManager = World.Active.EntityManager;
+            EntityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
             // create our archetype
             Archetype = EntityManager.CreateArchetype(
@@ -49,6 +49,7 @@ namespace WDIB.Explosives
         private static void CreateVisualComponents(Vector3 spawnPos, ExplosiveData data)
         {
             // TODO: Write Generic Pooling for VFX and eventually pure ECS when more stable (multi-threaded)
+            return;
             // ---------------------------------------------------------------------------------------------
             GameObject tmpGO = GameObject.Instantiate(data.particleEffect, spawnPos, Quaternion.identity);
             tmpGO.AddComponent<DestroyOnComplete>();

@@ -20,45 +20,28 @@ namespace WDIB.Weapons
         public bool IsReloading;
     }
 
-    public struct ShootFromOffset : IComponentData
-    {
-        public float3 Value;
-        public float3 Offset;
-        public float3 Heading;
-    }
-
-    public struct ShootFromCamera : IComponentData
+    public struct ShootFrom : IComponentData
     {
         public float3 Position;
         public quaternion Rotation;
     }
 
-    public struct ProjectileCount : IComponentData
+    public struct Muzzle : IComponentData
     {
-        public int Value;
+        public float3 Position;
+        public quaternion Rotation;
+
+        public float Offset;
     }
 
-    public struct TimeBetweenBurstShots : IComponentData
+    public struct BurstFire : IComponentData
     {
         public float Value;
         public float ResetValue;
-    }
 
-    // This should just be an offset point?
-    public struct ProjectileSpawnPoint : IComponentData
-    {
-        public float distance; // how far away to spawns
-        public float3 heading;
-        public float3 direction; // the direction
+        public int Count;
+        public int MaxCount;
     }
-
-    public struct Reload : IComponentData
-    {
-        public float Value; // this is how long is left
-        public float ResetValue; // this is where the countdown timer starts
-    }
-
-    public struct ReloadTag : IComponentData { }
 
     public struct MeleeComponent : IComponentData
     {
@@ -83,13 +66,23 @@ namespace WDIB.Weapons
 
     }
 
-    /// <summary>
-    /// A tag to determine if the weapon is equipped
-    /// </summary>
-    public struct EquippedTag : IComponentData { }
-
     public struct Actioning : IComponentData
     {
         public float Value;
     }
+
+    /// <summary>
+    /// ***************** TAGS **********************
+    /// </summary>
+    
+    public struct ShootFromCameraTag : IComponentData { }
+
+    public struct ShootFromMuzzleTag : IComponentData { }
+
+    public struct ReloadTag : IComponentData { }
+
+    /// <summary>
+    /// A tag to determine if the weapon is equipped
+    /// </summary>
+    public struct EquippedTag : IComponentData { }
 }

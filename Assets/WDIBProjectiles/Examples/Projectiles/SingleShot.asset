@@ -16,13 +16,13 @@ MonoBehaviour:
   projectilesPerAShot: 1
   maxDistance: 1000
   damage: 10
-  speed: 150
+  speed: 10
   spread:
     minimumSpread: -0.101
     maximumSpread: 0.104
-  mesh: {fileID: -3538912161762337279, guid: 26b0a97d9700a254493ff53b04680934, type: 3}
+  mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   material: {fileID: 2100000, guid: 943553cc5add5d441b85589e4a00c401, type: 2}
-  length: 1.28
+  length: 0.01
   componentData:
   - componentType: 5
     floatValue: 1

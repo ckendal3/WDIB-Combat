@@ -3,9 +3,13 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using WDIB.Components;
+using UnityEngine;
 
 namespace WDIB.Weapons
 {
+    // TODO: ALLOW SHOOTFROMCAMERA and SHOOTFROMMUZZLE
+    // TODO: Add Dynamic component adding
+    // TODO: Add Single, Burst, Automatic for gun firing modes
     public static class WeaponFactory
     {
         static EntityManager EntityManager;
@@ -21,14 +25,15 @@ namespace WDIB.Weapons
 
         static WeaponFactory()
         {
-            EntityManager = World.Active.EntityManager;
+            EntityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
             // create our archetype
             Archetype = EntityManager.CreateArchetype(                                                               
                                         ComponentType.ReadWrite<Translation>(), ComponentType.ReadWrite<Rotation>(),
                                         ComponentType.ReadWrite<Weapon>(), ComponentType.ReadWrite<OwnerID>(),
                                         ComponentType.ReadOnly<LocalToWorld>(), ComponentType.ReadWrite<TimeBetweenShots>(),
-                                        ComponentType.ReadWrite<WeaponState>(), ComponentType.ReadWrite<ShootFromOffset>()
+                                        ComponentType.ReadWrite<WeaponState>(), ComponentType.ReadWrite<ShootFrom>(),
+                                        ComponentType.ReadWrite<Muzzle>()
                                         );
 
             Parameters = WeaponParameters.Instance;
@@ -39,7 +44,7 @@ namespace WDIB.Weapons
         /// </summary>
         /// <param name="projectileID"></param>
         /// <param name="spawnAmount"></param>
-        public static Entity CreateWeapon(int weaponID, float3 spawnPos, quaternion spawnRot, uint ownerID, float3 shootFromOffset)
+        public static Entity CreateWeapon(int weaponID, float3 spawnPos, quaternion spawnRot, uint ownerID, float muzzleOffset)
         {
             // -------------------
             // create visuals here
@@ -61,7 +66,7 @@ namespace WDIB.Weapons
             // create the entity to clone from
             weaponEntity = EntityManager.CreateEntity(Archetype);
 
-            SetComponents(ref weaponEntity, weaponID, spawnPos, spawnRot, Parameters.GetWeaponDataByID(weaponID), ownerID, shootFromOffset);
+            SetComponents(weaponEntity, weaponID, spawnPos, spawnRot, Parameters.GetWeaponDataByID(weaponID), ownerID, muzzleOffset);
 
             return weaponEntity;
         }
@@ -71,7 +76,7 @@ namespace WDIB.Weapons
         /// </summary>
         /// <param name="spawnTransform"></param>
         /// <param name="data"></param>
-        private static void SetComponents(ref Entity entity, int weaponID, float3 spawnPos, quaternion spawnRot, WeaponData data, uint ownerID, float3 offsetPos)
+        private static void SetComponents(Entity entity, int weaponID, float3 spawnPos, quaternion spawnRot, WeaponData data, uint ownerID, float muzzleOffset)
         {
             #region Template Weapon Entity
 #if UNITY_EDITOR
@@ -88,7 +93,14 @@ namespace WDIB.Weapons
             EntityManager.SetComponentData(entity, new Weapon { ID = weaponID });
             EntityManager.SetComponentData(entity, new TimeBetweenShots { Value = 0, ResetValue = data.timeBetweenShots });
             EntityManager.SetComponentData(entity, new WeaponState { IsReloading = false, IsShooting = false });
-            EntityManager.SetComponentData(entity, new ShootFromOffset { Value = 0, Offset = offsetPos, Heading = math.normalize(spawnPos - offsetPos) });
+            EntityManager.SetComponentData(entity, new Muzzle //TODO: Fix this offset stuff
+            {
+                Position = spawnPos + muzzleOffset * math.forward(spawnRot),
+                Rotation = spawnRot,
+                Offset = muzzleOffset
+            });
+
+            EntityManager.SetComponentData(entity, new ShootFrom { Position = spawnPos + muzzleOffset * math.forward(spawnRot), Rotation = spawnRot });
             #endregion
         }
     }

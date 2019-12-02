@@ -42,7 +42,7 @@ namespace WDIB.Systems
 
             var movementJob = new MovementJob
             {
-                deltaTime = Time.deltaTime
+                deltaTime = Time.DeltaTime
             }.Schedule(this, prevPositionJob);
 
             return movementJob;

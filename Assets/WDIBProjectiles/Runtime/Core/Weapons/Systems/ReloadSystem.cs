@@ -1,10 +1,12 @@
 ﻿using Unity.Entities;
+using WDIB.Utilities;
 
 namespace WDIB.Weapons
 {
     // TODO: Implement timed reload
     // TODO: Implement ammo reduction on reload
     // TODO: Implement Battery Cooldown
+    [UpdateInGroup(typeof(SupplementalSystemGroup))]
     public class ReloadSystem : ComponentSystem
     {
         protected override void OnUpdate()
@@ -13,7 +15,7 @@ namespace WDIB.Weapons
             {
                 ammo.value = ammo.maxValue;
 
-                World.Active.EntityManager.RemoveComponent<ReloadTag>(entity);
+                World.DefaultGameObjectInjectionWorld.EntityManager.RemoveComponent<ReloadTag>(entity);
             });
         }
     }

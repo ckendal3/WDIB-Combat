@@ -1,12 +1,12 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using Unity.Collections;
+﻿using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using UnityEngine;
+using WDIB.Utilities;
 
 namespace WDIB.Weapons
 {
+    [UpdateInGroup(typeof(SupplementalSystemGroup))]
     public class TimeBetweenShotsSystem : JobComponentSystem
     {
         public struct DecreaseTimeJob : IJobForEach<Weapon, TimeBetweenShots>
@@ -30,7 +30,7 @@ namespace WDIB.Weapons
         {
             return new DecreaseTimeJob()
             {
-                deltaTime = Time.deltaTime
+                deltaTime = Time.DeltaTime
             }.Schedule(this, inputDeps);
         }
     }

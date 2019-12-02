@@ -1,4 +1,5 @@
-﻿using Unity.Collections;
+﻿using System;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 using WDIB.Components;
@@ -23,7 +24,7 @@ namespace WDIB.Utilities
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            EntityManager = World.Active.EntityManager;
+            EntityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
             HitSystem.onHitSystemFinish += OnHitSystemEvent;
             MultiHitSystem.onMultiHitSystemFinish += OnMultiHitSystemEvent;
@@ -49,7 +50,6 @@ namespace WDIB.Utilities
             CreateHitVisual();
 
             DestroyEntity(handlerData.Entity);
-
         }
 
         /// <summary>
@@ -109,6 +109,8 @@ namespace WDIB.Utilities
 
         private static void TryToApplyDamage(float damage, uint ownerID, Collider collider) //ref Entity entity, Collider collider
         {
+            // TODO: FIX GC: This has 48.2 KB of garbage a frame
+
             // if there is no damageable interface - don't do anything else
             IDamageable damageable = collider.GetComponent<IDamageable>();
             if (damageable == null)

@@ -124,7 +124,7 @@ namespace WDIB.Systems
             entities.Dispose();
             rayCommands.Dispose();
 
-            return JobHandle.CombineDependencies(inputDeps, setupJob);
+            return inputDeps;
         }
 
         protected override void OnCreate()

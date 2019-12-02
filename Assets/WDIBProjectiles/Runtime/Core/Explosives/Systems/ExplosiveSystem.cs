@@ -76,7 +76,8 @@ namespace WDIB.Explosives
             ExplosiveData data;
 
             // --------------------------
-            // THIS IS GENERATING GARBAGE?
+            // TODO: FIX GC: Adding to list is creating 21.9 KB a frame
+            // THIS IS GENERATING GARBAGE
             // --------------------------
             List<ECSExplosiveData> tmpHitData = new List<ECSExplosiveData>();
             List<Collider> explosiveHits;

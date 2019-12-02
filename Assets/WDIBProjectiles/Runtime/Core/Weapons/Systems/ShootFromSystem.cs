@@ -2,49 +2,85 @@
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.Mathematics;
-using Unity.Transforms;
 using WDIB.Components;
+using WDIB.Player;
+using WDIB.Utilities;
 
 namespace WDIB.Weapons
 {
+    [UpdateInGroup(typeof(SupplementalSystemGroup))]
     public class ShootFromSystem : JobComponentSystem
     {
-        [BurstCompile]
-        public struct UpdateShootFrom : IJobForEach<ShootFromOffset, OwnerID, Translation, Rotation>
-        {
-            public void Execute(ref ShootFromOffset shootFrom, [ReadOnly] ref OwnerID owner, [ReadOnly] ref Translation position, [ReadOnly] ref Rotation rotation)
-            {
-                //shootFrom.value = new float3(position.Value + (shootFrom.offset * math.forward(rotation.Value)));
+        private EntityQuery StatesQuery;
 
-                shootFrom.Value = position.Value + (shootFrom.Offset * (math.forward(rotation.Value) * shootFrom.Heading)); // math.normalize(shootFrom.value) + math.forward(rotation.Value)
+        [BurstCompile]
+        [RequireComponentTag(typeof(ShootFromMuzzleTag))]
+        public struct UpdateShootFromMuzzle : IJobForEach<ShootFrom, Muzzle, OwnerID>
+        {
+            public void Execute([WriteOnly] ref ShootFrom shootfrom, [ReadOnly] ref Muzzle muzzle, [ReadOnly] ref OwnerID owner)
+            {
+                shootfrom = new ShootFrom
+                {
+                    Position = muzzle.Position,
+                    Rotation = muzzle.Rotation
+                };
             }
         }
 
-        // TODO: Implement shoot from camera
-        //[BurstCompile]
-        //public struct UpdateShootFromCamera : IJobForEach<ShootFromCamera, Owner>
-        //{
-        //    NativeArray<PlayerState> states;
 
-        //    public void Execute([WriteOnly] ref ShootFromCamera shootFrom, [ReadOnly] ref Owner owner)
-        //    {
-        //        for (int i = 0; i < states.Length; i++)
-        //        {
-        //            if(states[i].ID == owner.ID)
-        //            {
-        //                shootFrom.Position = states[i].Position;
-        //                shootFrom.Rotation = states[i].Rotation;
-        //                return;
-        //            }
-        //        }
-        //    }
-        //}
+        [BurstCompile]
+        [RequireComponentTag(typeof(ShootFromCameraTag))]
+        public struct UpdateShootFromCamera : IJobForEach<ShootFrom, OwnerID>
+        {
+            [DeallocateOnJobCompletion]
+            public NativeArray<PlayerState> states;
+            [DeallocateOnJobCompletion]
+            public NativeArray<OwnerID> statesID;
+
+            public void Execute([WriteOnly] ref ShootFrom shootFrom, [ReadOnly] ref OwnerID owner)
+            {
+                for (int i = 0; i < states.Length; i++)
+                {
+                    if (statesID[i].Value == owner.Value)
+                    {
+                        shootFrom = new ShootFrom
+                        {
+                            Position = states[i].CameraPos,
+                            Rotation = states[i].CameraRot
+                        };
+                    }
+                }
+            }
+        }
 
 
         protected override JobHandle OnUpdate(JobHandle inputDeps)
         {
-            return new UpdateShootFrom() { }.Schedule(this, inputDeps);
+            JobHandle fromMuzzle = new UpdateShootFromMuzzle
+            { }.Schedule(this, inputDeps);
+
+            if(StatesQuery.CalculateEntityCount() > 0)
+            {
+                JobHandle fromCamera = new UpdateShootFromCamera()
+                {
+                    states = StatesQuery.ToComponentDataArray<PlayerState>(Allocator.TempJob),
+                    statesID = StatesQuery.ToComponentDataArray<OwnerID>(Allocator.TempJob)
+
+                }.Schedule(this, fromMuzzle);
+
+                return fromCamera;
+            }
+
+            return fromMuzzle;
+        }
+
+        protected override void OnCreate()
+        {
+            StatesQuery = GetEntityQuery(new EntityQueryDesc
+                {
+                    All = new ComponentType[] { ComponentType.ReadOnly<PlayerState>(), ComponentType.ReadOnly<OwnerID>()
+                }
+            });
         }
     }
 }

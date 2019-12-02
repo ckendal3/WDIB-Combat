@@ -9,15 +9,18 @@ using WDIB.Inputs;
 using WDIB.Parameters;
 using WDIB.Player;
 using WDIB.Projectiles;
+using WDIB.Utilities;
 
 namespace WDIB.Weapons
 {
+    // TODO: Get rid of projectilequeuedata stuff
+    [UpdateInGroup(typeof(SupplementalSystemGroup))]
     public class WeaponSystem : JobComponentSystem
     {
         private EntityQuery InputQuery;
 
-        // This creates a new weapon state based on weapon state
         [BurstCompile]
+        [RequireComponentTag(typeof(EquippedTag))]
         public struct ProcessWeaponState : IJobForEach<Weapon, WeaponState, OwnerID>
         {
             [DeallocateOnJobCompletion]
@@ -46,19 +49,18 @@ namespace WDIB.Weapons
             }
         }
 
-        // TODO: Should use PlayerState's Camera Position and Rotation for projectiles
         [BurstCompile]
-        public struct ShootWeaponJob : IJobForEach<WeaponState, Weapon, TimeBetweenShots, OwnerID, Rotation, ShootFromOffset>
+        public struct ShootWeaponJob : IJobForEach<WeaponState, Weapon, TimeBetweenShots, OwnerID, Rotation, ShootFrom>
         {
             public NativeQueue<ProjectileQueueData>.ParallelWriter queueData;
 
-            public void Execute([ReadOnly] ref WeaponState state, [ReadOnly] ref Weapon weapon, [ReadOnly] ref TimeBetweenShots timeBetween,
-                [ReadOnly] ref OwnerID owner, [ReadOnly] ref Rotation rotation, [ReadOnly] ref ShootFromOffset offset)
+            public void Execute([ReadOnly] ref WeaponState state, [ReadOnly] ref Weapon weapon, ref TimeBetweenShots timeBetween,
+                [ReadOnly] ref OwnerID owner, [ReadOnly] ref Rotation rotation, [ReadOnly] ref ShootFrom shootFrom)
             {
                 if (state.IsShooting && timeBetween.Value < 0)
                 {
                     // gather all our shots to be fired
-                    queueData.Enqueue(new ProjectileQueueData { Owner = owner.Value, WeaponID = weapon.ID, SpawnPos = offset.Value, SpawnRot = rotation.Value });
+                    queueData.Enqueue(new ProjectileQueueData { Owner = owner.Value, WeaponID = weapon.ID, SpawnPos = shootFrom.Position, SpawnRot = shootFrom.Rotation });
 
                     // we shot, gun needs to wait
                     timeBetween.Value = timeBetween.ResetValue;

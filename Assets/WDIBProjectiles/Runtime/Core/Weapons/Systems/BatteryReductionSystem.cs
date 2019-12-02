@@ -1,7 +1,9 @@
 ﻿using Unity.Entities;
+using WDIB.Utilities;
 
 namespace WDIB.Weapons
 {
+    [UpdateInGroup(typeof(SupplementalSystemGroup))]
     public class BatteryReductionSystem : ComponentSystem
     {
         protected override void OnUpdate()
@@ -9,7 +11,7 @@ namespace WDIB.Weapons
             Entities.WithAll<ReduceBatteryTag, Weapon>().ForEach((Entity entity, ref BatteryComponent battery) =>
             {
                 battery.value -= 1;
-                World.Active.EntityManager.RemoveComponent<ReduceBatteryTag>(entity);
+                World.DefaultGameObjectInjectionWorld.EntityManager.RemoveComponent<ReduceBatteryTag>(entity);
             });
         }
     }

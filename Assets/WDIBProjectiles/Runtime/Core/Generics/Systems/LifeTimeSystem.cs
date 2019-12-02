@@ -27,7 +27,7 @@ namespace WDIB.Systems
         {
             var lifeJob = new LifeTimeJob
             {
-                deltaTime = Time.deltaTime
+                deltaTime = Time.DeltaTime
             }.Schedule(this, inputDeps);
 
             return lifeJob;

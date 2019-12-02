@@ -9,12 +9,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2cdbafa9fe6251142962dfd590d3138b, type: 3}
+  m_Script: {fileID: 11500000, guid: d98b3e85b28be41469f9dd1d04d51d2f, type: 3}
   m_Name: DefaultWeapon
   m_EditorClassIdentifier: 
   weaponName: Default
   projectileId: 0
-  firingType: 2
-  timeBetweenShots: 1.61
-  timeBetweenBurstRounds: 0.2
-  burstAmount: 2
+  firingType: 1
+  timeBetweenShots: 2.61
+  timeBetweenBurstRounds: 0.73
+  burstAmount: 3
+  muzzleOffset:
+    x: 0
+    y: 0
+    z: 0

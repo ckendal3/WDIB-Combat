@@ -4,6 +4,7 @@ using Unity.Transforms;
 using UnityEngine;
 using WDIB.Components;
 using WDIB.Inputs;
+using WDIB.Player;
 using WDIB.Weapons;
 
 public class Test_Weapon : MonoBehaviour
@@ -11,36 +12,39 @@ public class Test_Weapon : MonoBehaviour
     private Entity weapEntity;
     private Entity barrelSocket;
 
+    [SerializeField]
+    public DebugShootFromType type = DebugShootFromType.Muzzle;
+
     EntityManager EntityManager;
 
     public GameObject offsetObject;
-    private float3 offsetDistance = new float3(0,0,0);
+    private float offsetDistance = 2f;
 
 
     // Start is called before the first frame update
     void Start()
     {
-        EntityManager = World.Active.EntityManager;
+        EntityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
         CreateFakePlayer();
         if(offsetObject != null)
         {
-            offsetDistance = transform.position - offsetObject.transform.position;
+            offsetDistance = math.distance(transform.position, offsetObject.transform.position);
         }
-
-
 
         weapEntity = WeaponFactory.CreateWeapon(0, transform.position, transform.rotation, 0, offsetDistance);
 
-        barrelSocket = EntityManager.CreateEntity();
-        EntityManager.SetName(barrelSocket, "barrelSocket");
-        EntityManager.AddComponentData(barrelSocket, new Parent { Value = weapEntity });
-        EntityManager.AddComponentData(barrelSocket, new LocalToWorld { });
-        EntityManager.AddComponentData(barrelSocket, new LocalToParent { });
-        EntityManager.AddComponentData(barrelSocket, new Rotation { Value = transform.rotation });
-        EntityManager.AddComponentData(barrelSocket, new Translation { Value = offsetObject.transform.position });
-        EntityManager.AddComponentData(barrelSocket, new PreviousParent { });
+        if(type == DebugShootFromType.Muzzle)
+        {
+            EntityManager.AddComponentData(weapEntity, new ShootFromMuzzleTag { });
+        }
+        else if(type == DebugShootFromType.Camera)
+        {
+            EntityManager.AddComponentData(weapEntity, new ShootFromCameraTag { });
+        }
 
+        
+        EntityManager.AddComponentData(weapEntity, new EquippedTag { });
     }
 
     void CreateFakePlayer()
@@ -59,5 +63,21 @@ public class Test_Weapon : MonoBehaviour
         });
 
         EntityManager.AddComponentData<OwnerID>(entity, new OwnerID() { Value = 0 });
+        EntityManager.AddComponentData<PlayerState>(entity, new PlayerState
+        {
+            CameraPos = transform.position,
+            CameraRot = transform.rotation,
+            Position = transform.position,
+            Rotation = transform.rotation
+        });
+
+
+
+    }
+
+    public enum DebugShootFromType
+    {
+        Camera,
+        Muzzle
     }
 }

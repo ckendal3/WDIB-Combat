@@ -30,7 +30,7 @@ namespace WDIB.Projectiles
 
         static ProjectileFactory()
         {
-            EntityManager = World.Active.EntityManager;
+            EntityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
             // create our archetype
             Archetype = EntityManager.CreateArchetype(                                                               // probably could just get away with Scale component
