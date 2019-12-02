@@ -12,6 +12,7 @@ using WDIB.Utilities;
 
 namespace WDIB.Systems
 {
+    // TODO: Add burst job to further increase performance as this is the most taxing system
     [UpdateInGroup(typeof(HitSystemGroup))]
     public class MultiHitSystem : JobComponentSystem
     {
@@ -65,8 +66,9 @@ namespace WDIB.Systems
             }
 
             // Get the matching entities from the query
-            var entities = MultiHitQuery.ToEntityArray(Allocator.TempJob, out JobHandle entArrayHandle);
-            entArrayHandle.Complete();
+            var entities = MultiHitQuery.ToEntityArray(Allocator.TempJob);
+            var ownerIDs = MultiHitQuery.ToComponentDataArray<OwnerID>(Allocator.TempJob);
+            var projectiles = MultiHitQuery.ToComponentDataArray<Projectile>(Allocator.TempJob);
 
             // Setup Ray Commands
             NativeArray<RaycastCommand> rayCommands = new NativeArray<RaycastCommand>(count, Allocator.TempJob);
@@ -86,19 +88,17 @@ namespace WDIB.Systems
             #region Default raycast
             Ray ray;
             int hitCount;
-            int projectileID;
             HitHandlerData handlerData;
             // for every projectile
             for (int i = 0; i < count; i++)
             {
                 ray = new Ray { origin = rayCommands[i].from, direction = rayCommands[i].direction };
-                projectileID = EntityManager.GetComponentData<Projectile>(entities[i]).ID;
 
                 handlerData = new HitHandlerData
                 {
                     Entity = entities[i],
-                    ProjectileID = EntityManager.GetComponentData<Projectile>(entities[i]).ID,
-                    OwnerID = EntityManager.GetComponentData<OwnerID>(entities[i]).Value
+                    ProjectileID = projectiles[i].ID,
+                    OwnerID = ownerIDs[i].Value
                 };
 
                 // if we have any hits
@@ -108,7 +108,7 @@ namespace WDIB.Systems
                     NativeArray<RaycastHit> tmpHits = new NativeArray<RaycastHit>(hitCount, Allocator.TempJob);
 
                     // for every hit
-                    for(int j = 0; j < hitCount; j++)
+                    for (int j = 0; j < hitCount; j++)
                     {
                         tmpHits[j] = Hits[j];
                     }
@@ -122,6 +122,9 @@ namespace WDIB.Systems
             #endregion
 
             entities.Dispose();
+            ownerIDs.Dispose();
+            projectiles.Dispose();
+
             rayCommands.Dispose();
 
             return inputDeps;
@@ -137,8 +140,8 @@ namespace WDIB.Systems
                 All = new ComponentType[]
                 {
                 ComponentType.ReadOnly<PreviousTranslation>(), ComponentType.ReadOnly<Translation>(),
-                ComponentType.ReadOnly<Rotation>(), ComponentType.ReadOnly<Damage>(), ComponentType.ReadOnly<OwnerID>(),
-                ComponentType.ReadWrite<MultiHit>()
+                ComponentType.ReadOnly<Rotation>(),  ComponentType.ReadOnly<OwnerID>(),
+                ComponentType.ReadWrite<MultiHit>(), ComponentType.ReadOnly<Projectile>()
                 }
             });
 
