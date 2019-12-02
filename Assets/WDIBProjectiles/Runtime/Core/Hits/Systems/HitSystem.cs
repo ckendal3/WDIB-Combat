@@ -12,6 +12,7 @@ using WDIB.Utilities;
 
 namespace WDIB.Systems
 {
+    // TODO: Make SetupCommands for both Hit and MultiHit system (move to own class)
     [UpdateInGroup(typeof(HitSystemGroup))]
     public class HitSystem : JobComponentSystem
     {
@@ -67,11 +68,11 @@ namespace WDIB.Systems
                 cmds = commands,
                 hitMask = Parameters.GetProjectileHitLayer()
             }.Schedule(count, 1, inputDeps);
-
             setupCommandsJob.Complete();
 
-            NativeArray<Entity> entities = DetectHitQuery.ToEntityArray(Allocator.TempJob, out JobHandle entitiesHandle);
-            entitiesHandle.Complete();
+            var entities = DetectHitQuery.ToEntityArray(Allocator.TempJob);
+            var ownerIDs = DetectHitQuery.ToComponentDataArray<OwnerID>(Allocator.TempJob);
+            var projectiles = DetectHitQuery.ToComponentDataArray<Projectile>(Allocator.TempJob);
 
             #region Default Physics
             // Try using batch raycasting
@@ -95,8 +96,8 @@ namespace WDIB.Systems
                     handlerData = new HitHandlerData
                     {
                         Entity = entities[i],
-                        ProjectileID = EntityManager.GetComponentData<Projectile>(entities[i]).ID,
-                        OwnerID = EntityManager.GetComponentData<OwnerID>(entities[i]).Value
+                        ProjectileID = projectiles[i].ID,
+                        OwnerID = ownerIDs[i].Value
                     };
 
                     onHitSystemFinish?.Invoke(handlerData, hit);
@@ -105,6 +106,9 @@ namespace WDIB.Systems
 
             #endregion
             entities.Dispose();
+            ownerIDs.Dispose();
+            projectiles.Dispose();
+
             commands.Dispose();
 
             return inputDeps;

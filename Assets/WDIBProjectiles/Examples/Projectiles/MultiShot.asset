@@ -27,7 +27,7 @@ MonoBehaviour:
   componentData:
   - componentType: 1
     floatValue: 1
-    intValue: 4
+    intValue: 2
   - componentType: 5
     floatValue: 1
-    intValue: 1
+    intValue: 0

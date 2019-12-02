@@ -85,7 +85,7 @@ namespace WDIB.Explosives
             // for every explosion
             for (int i = 0; i < count; i++)
             {
-                explosiveId = (int)explosives[i].ID;
+                explosiveId = explosives[i].ID;
                 data = Parameters.GetExplosiveDataByID(explosiveId);
 
                 // if we have hits
@@ -94,7 +94,7 @@ namespace WDIB.Explosives
                 if (hitCount > 0)
                 {
                     explosiveHits = new List<Collider>();
-                    ecsData = new ECSExplosiveData { ExplosiveID = explosiveId };
+                    ecsData = new ECSExplosiveData { ExplosiveID = explosiveId, OwnerID = owners[i].Value };
 
                     // Do a batch raycast to all hits and filter out all overlapping colliders that 
                     // aren't hit first - so raycast to an overlapped object and make sure there isn't
