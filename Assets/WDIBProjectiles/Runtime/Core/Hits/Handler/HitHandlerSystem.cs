@@ -1,6 +1,7 @@
-﻿using System;
-using Unity.Collections;
+﻿using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 using WDIB.Components;
 using WDIB.Explosives;
@@ -10,7 +11,6 @@ using WDIB.Projectiles;
 using WDIB.Systems;
 
 //TODO: Implement Hit Visuals
-//TODO: Implment physics hits/forces
 //TODO: Implement Impulse force and damage based on distance for explosions
 //TODO: Destroy/Stop multi-hit projectiles on environmental hit, continue on soft target hits
 
@@ -46,9 +46,10 @@ namespace WDIB.Utilities
 
             TryToApplyDamage(damage, ownerID, hit.collider);
 
-            //TryToApplyForce();
+            TryToApplyForce(damage, hit.collider, ForceType.Force);
             CreateHitVisual();
 
+            // TODO: Dont destroy entities in here
             DestroyEntity(handlerData.Entity);
         }
 
@@ -64,6 +65,7 @@ namespace WDIB.Utilities
             MultiHit multiComponent = EntityManager.GetComponentData<MultiHit>(entity);
             uint ownerID = EntityManager.GetComponentData<OwnerID>(entity).Value;
             float damage = EntityManager.GetComponentData<Damage>(entity).Value;
+            float3 position = EntityManager.GetComponentData<Translation>(entity).Value;
 
             // for every hit
             for (int i = 0; i < hitData.Length; i++)
@@ -78,7 +80,9 @@ namespace WDIB.Utilities
                 EntityManager.SetComponentData(entity, new MultiHit { Hits = multiComponent.Hits + 1, MaxHits = multiComponent.MaxHits });
 
                 TryToApplyDamage(damage, ownerID, hit.collider);
-                //TryToApplyForce();
+
+                // TODO: Don't use damage as force
+                TryToApplyForce(damage, hit.collider, ForceType.Force, position);
                 CreateHitVisual();
             }
         }
@@ -88,7 +92,7 @@ namespace WDIB.Utilities
             ECSExplosiveData data;
             // for every explosion
             for (int i = 0; i < hitData.Length; i++)
-            {
+            {   
                 data = hitData[i];
                 Collider collider;
 
@@ -100,14 +104,15 @@ namespace WDIB.Utilities
                     ExplosiveData eData = WeaponParameters.Instance.GetExplosiveDataByID(hitData[i].ExplosiveID);
 
                     TryToApplyDamage(eData.damage, data.OwnerID, collider);
-                    //TryToApplyForce();
+                    TryToApplyForce(eData.force, collider, ForceType.Impulse, data.Position);
                     CreateHitVisual();
                 }
 
             }
         }
 
-        private static void TryToApplyDamage(float damage, uint ownerID, Collider collider) //ref Entity entity, Collider collider
+        
+        private static void TryToApplyDamage(float damage, uint ownerID, Collider collider)
         {
             // TODO: FIX GC: This has 48.2 KB of garbage a frame
 
@@ -121,35 +126,50 @@ namespace WDIB.Utilities
             damageable.ApplyDamage(damage, ownerID);
         }
 
-        private static void TryToApplyForce(Entity entity, Collider collider) //ref Entity entity, Collider collider
+        private static void TryToApplyForce(float force, Collider collider, ForceType type)
         {
             // if there is no physicsable interface - don't do anything else
-            IPhysicsable physicsable = collider.GetComponent<IPhysicsable>();
-            if (physicsable == null)
+            IPhysicsObject pObject = collider.GetComponent<IPhysicsObject>();
+            if (pObject == null)
             {
                 return;
             }
 
-            //TODO: Change owners to uints or ints?
-            float force = EntityManager.GetComponentData<Damage>(entity).Value; // use damage as force for now
-            int ownerID = (int)EntityManager.GetComponentData<OwnerID>(entity).Value;
-
-            physicsable.AddForce(force);
+            switch (type)
+            {
+                case ForceType.Impulse:
+                    Debug.LogError("Force: Impulse force type must use the arguement that takes a float3 origin.");
+                    break;
+                case ForceType.Force:
+                    pObject.AddForce(force);
+                    break;
+                case ForceType.Freeze:
+                    Debug.LogError("Force: Freeze type is not implemented.");
+                    break;
+            }
         }
 
-        private static void TryToApplyImpulseForce(Entity entity, Collider collider) //ref Entity entity, Collider collider
+        private static void TryToApplyForce(float force, Collider collider, ForceType type, float3 origin)
         {
             // if there is no physicsable interface - don't do anything else
-            IPhysicsable physicsable = collider.GetComponent<IPhysicsable>();
-            if (physicsable == null)
+            IPhysicsObject pObject = collider.GetComponent<IPhysicsObject>();
+            if (pObject == null)
             {
                 return;
             }
 
-            float force = EntityManager.GetComponentData<Damage>(entity).Value;
-            int ownerID = (int)EntityManager.GetComponentData<OwnerID>(entity).Value;
-
-            physicsable.AddImpulseForce(force, ownerID);
+            switch (type)
+            {
+                case ForceType.Impulse:
+                    pObject.AddImpulseForce(force, origin);
+                    break;
+                case ForceType.Force:
+                    pObject.AddForce(force);
+                    break;
+                case ForceType.Freeze:
+                    Debug.LogError("Force: Freeze type is not implemented.");
+                    break;
+            }
         }
 
         private static void CreateHitVisual()
@@ -166,7 +186,7 @@ namespace WDIB.Utilities
         private static void AddExplosion(Entity entity, Vector3 hitPoint, uint ownerID)
         {
             Explosive explosive = EntityManager.GetComponentData<Explosive>(entity);
-            ExplosiveFactory.CreateExplosive((int)explosive.ID, hitPoint, ownerID);
+            ExplosiveFactory.CreateExplosive(explosive.ID, hitPoint, ownerID);
         }
 
         private static void DestroyEntity(Entity entity)
@@ -188,5 +208,14 @@ namespace WDIB.Utilities
         public int ExplosiveID; // the explosion data
         public uint OwnerID; // the player(?) that caused the explosion
         public Collider[] Colliders; // all the things this explosion hit
+        public float3 Position;
     }
+
+    public enum ForceType
+    {
+        Impulse,
+        Force,
+        Freeze
+    }
+
 }

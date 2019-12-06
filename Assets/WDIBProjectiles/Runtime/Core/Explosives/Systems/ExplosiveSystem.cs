@@ -13,6 +13,7 @@ using WDIB.Utilities;
 namespace WDIB.Explosives
 {
     // TODO: EXPLOSIVES::Reduce main thread waiting
+    [UpdateInGroup(typeof(HitSystemGroup))]
     public class ExplosiveSystem : JobComponentSystem
     {
         private Collider[] Colliders;
@@ -90,19 +91,12 @@ namespace WDIB.Explosives
 
                 // if we have hits
                 ECSExplosiveData ecsData;
+                // TODO: Check, is this going to apply to child colliders too? We don't want that
                 int hitCount = Physics.OverlapSphereNonAlloc(positions[i].Value, data.radius, Colliders, HitMask);
                 if (hitCount > 0)
                 {
                     explosiveHits = new List<Collider>();
-                    ecsData = new ECSExplosiveData { ExplosiveID = explosiveId, OwnerID = owners[i].Value };
-
-                    // Do a batch raycast to all hits and filter out all overlapping colliders that 
-                    // aren't hit first - so raycast to an overlapped object and make sure there isn't
-                    // a wall inbetween them and the explosion
-                    // need to have an environmental check so we don't have to cycle through everything
-                    //NativeArray<RaycastCommand> commands = new NativeArray<RaycastCommand>(hitCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                    //NativeArray<RaycastHit> hitResults = new NativeArray<RaycastHit>(hitCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                    //RaycastCommand.ScheduleBatch(commands, hitResults, 2, );
+                    ecsData = new ECSExplosiveData { ExplosiveID = explosiveId, OwnerID = owners[i].Value, Position = positions[i].Value };
 
                     // for every hit we have
                     for (int j = 0; j < Colliders.Length; j++)
@@ -122,9 +116,6 @@ namespace WDIB.Explosives
                         ecsData.Colliders = explosiveHits.ToArray();
                         tmpHitData.Add(ecsData);
                     }
-
-                    //commands.Dispose();
-                    //hitResults.Dispose();
                 }
 
             }

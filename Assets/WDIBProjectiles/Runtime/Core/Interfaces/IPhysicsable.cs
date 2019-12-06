@@ -2,7 +2,7 @@
 
 namespace WDIB.Interfaces
 {
-    public interface IPhysicsable
+    public interface IPhysicsObject
     {
         /// <summary>
         /// Apply a constant force to the object

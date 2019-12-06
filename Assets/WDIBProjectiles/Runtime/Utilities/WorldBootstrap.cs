@@ -1,16 +1,19 @@
 ﻿using Unity.Entities;
 
-public class WorldBootstrap : ICustomBootstrap
+namespace WDIB.Utilities
 {
-    public bool Initialize(string defaultWorldName)
+    public class WorldBootstrap : ICustomBootstrap
     {
-        var world = new World("BootstrapWorld");
-        World.DefaultGameObjectInjectionWorld = world;
+        public bool Initialize(string defaultWorldName)
+        {
+            var world = new World("BootstrapWorld");
+            World.DefaultGameObjectInjectionWorld = world;
 
-        var systems = DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default);
+            var systems = DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default);
 
-        DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(world, systems);
-        ScriptBehaviourUpdateOrder.UpdatePlayerLoop(world);
-        return true;
+            DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(world, systems);
+            ScriptBehaviourUpdateOrder.UpdatePlayerLoop(world);
+            return true;
+        }
     }
 }

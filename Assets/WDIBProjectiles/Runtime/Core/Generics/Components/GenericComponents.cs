@@ -1,6 +1,5 @@
 ﻿using Unity.Entities;
 using Unity.Mathematics;
-using WDIB.Weapons;
 
 namespace WDIB.Components
 {
@@ -36,14 +35,6 @@ namespace WDIB.Components
     {
         public uint Value;
     }
-
-    // TODO: REMOVE THIS IS NO ISSUES
-    //// Where the controlled object should be looking
-    //// this could be a shared component and save perf
-    //public struct ControlledByPlayer : IComponentData
-    //{
-    //    public float3 lookPosition;
-    //}
 
     /// <summary>
     /// Health component of an entity

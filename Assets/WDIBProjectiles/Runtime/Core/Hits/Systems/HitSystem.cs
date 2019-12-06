@@ -52,12 +52,13 @@ namespace WDIB.Systems
 
         protected override JobHandle OnUpdate(JobHandle inputDeps)
         {
-            // make sure we have entities
             int count = DetectHitQuery.CalculateEntityCount();
             if (count == 0)
             {
                 return inputDeps;
             }
+
+            var resultsArray = new NativeArray<RaycastHit>(count, Allocator.TempJob);
 
             NativeArray<RaycastCommand> commands = new NativeArray<RaycastCommand>(count, Allocator.TempJob);
             var setupCommandsJob = new SetupCommandsJob
@@ -68,31 +69,18 @@ namespace WDIB.Systems
                 cmds = commands,
                 hitMask = Parameters.GetProjectileHitLayer()
             }.Schedule(count, 1, inputDeps);
-            setupCommandsJob.Complete();
+
+            RaycastCommand.ScheduleBatch(commands, resultsArray, 32, setupCommandsJob).Complete();
 
             var entities = DetectHitQuery.ToEntityArray(Allocator.TempJob);
             var ownerIDs = DetectHitQuery.ToComponentDataArray<OwnerID>(Allocator.TempJob);
             var projectiles = DetectHitQuery.ToComponentDataArray<Projectile>(Allocator.TempJob);
 
-            #region Default Physics
-            // Try using batch raycasting
-            UnityEngine.Ray ray;
-            UnityEngine.RaycastHit hit;
-
-            // for every hit
             HitHandlerData handlerData;
-            for (int i = 0; i < commands.Length; i++)
+            for (int i = 0; i < resultsArray.Length; i++)
             {
-                ray = new Ray(commands[i].from, commands[i].direction);
-
-                if (Physics.Raycast(ray, out hit, commands[i].distance, commands[i].layerMask))
+                if (resultsArray[i].collider != null)
                 {
-                    // don't add null hits
-                    if (hit.collider == null)
-                    {
-                        continue;
-                    }
-
                     handlerData = new HitHandlerData
                     {
                         Entity = entities[i],
@@ -100,16 +88,16 @@ namespace WDIB.Systems
                         OwnerID = ownerIDs[i].Value
                     };
 
-                    onHitSystemFinish?.Invoke(handlerData, hit);
+                    onHitSystemFinish?.Invoke(handlerData, resultsArray[i]);
                 }
             }
 
-            #endregion
             entities.Dispose();
             ownerIDs.Dispose();
             projectiles.Dispose();
 
             commands.Dispose();
+            resultsArray.Dispose();
 
             return inputDeps;
         }
@@ -123,7 +111,7 @@ namespace WDIB.Systems
             {
                 All = new ComponentType[] { ComponentType.ReadOnly<PreviousTranslation>(), ComponentType.ReadOnly<Translation>(),
                 ComponentType.ReadOnly<Rotation>(),  ComponentType.ReadWrite<Damage>(), ComponentType.ReadWrite<Distance>(),
-                ComponentType.ReadOnly<Projectile>()
+                ComponentType.ReadOnly<Projectile>(), ComponentType.ReadOnly<OwnerID>()
             },
                 None = new ComponentType[] { ComponentType.ReadOnly<MultiHit>() }
             });

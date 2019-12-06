@@ -4,6 +4,7 @@ using Unity.Transforms;
 using UnityEngine;
 using WDIB.Components;
 using WDIB.Parameters;
+using WDIB.Monobehaviours;
 
 namespace WDIB.Explosives
 {
@@ -48,12 +49,17 @@ namespace WDIB.Explosives
 
         private static void CreateVisualComponents(Vector3 spawnPos, ExplosiveData data)
         {
-            // TODO: Write Generic Pooling for VFX and eventually pure ECS when more stable (multi-threaded)
-            return;
-            // ---------------------------------------------------------------------------------------------
+            // TODO: Write Generic Pooling for VFX and eventually pure ECS when more stable
+            #if UNITY_EDITOR
+            if(data.particleEffect == null)
+            {
+                //Debug.LogWarning($"{data.explosiveName}'s particle effect is null");
+                return;
+            }
+            #endif
+               
             GameObject tmpGO = GameObject.Instantiate(data.particleEffect, spawnPos, Quaternion.identity);
-            tmpGO.AddComponent<DestroyOnComplete>();
-            // ---------------------------------------------------------------------------------------------
+            tmpGO.AddComponent<DestroyParticleOnComplete>();
         }
 
         private static void SetComponents(int explosiveID, float3 spawnPos, ExplosiveData data, uint ownerID)

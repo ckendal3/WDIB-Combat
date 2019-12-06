@@ -105,7 +105,7 @@ namespace WDIB.Systems
                 hitCount = Physics.RaycastNonAlloc(ray, Hits, rayCommands[i].distance, rayCommands[i].layerMask);
                 if (hitCount > 0)
                 {
-                    NativeArray<RaycastHit> tmpHits = new NativeArray<RaycastHit>(hitCount, Allocator.TempJob);
+                    NativeArray<RaycastHit> tmpHits = new NativeArray<RaycastHit>(hitCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
                     // for every hit
                     for (int j = 0; j < hitCount; j++)
