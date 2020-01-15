@@ -9,9 +9,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: da562695ec7a13942a339e4671dad506, type: 3}
-  m_Name: VisualHitParameters
+  m_Script: {fileID: 11500000, guid: d98b3e85b28be41469f9dd1d04d51d2f, type: 3}
+  m_Name: DefaultWeapon
   m_EditorClassIdentifier: 
-  hitVFXSet:
-  - {fileID: 11400000, guid: 750800505efecd84bba3521bddd90618, type: 2}
-  defaultVFX: {fileID: 11400000, guid: 750800505efecd84bba3521bddd90618, type: 2}
+  weaponName: Default
+  projectileId: 0
+  firingType: 2
+  timeBetweenShots: 0.5
+  timeBetweenBurstRounds: 0.2
+  burstAmount: 2
+  muzzleOffset:
+    x: 0
+    y: 0
+    z: 0

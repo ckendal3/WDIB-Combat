@@ -4,7 +4,7 @@ using Unity.Transforms;
 using UnityEngine;
 using WDIB.Components;
 using WDIB.Parameters;
-using WDIB.Monobehaviours;
+using WDIB.Utilities;
 
 namespace WDIB.Explosives
 {
@@ -38,10 +38,6 @@ namespace WDIB.Explosives
             debugGroupID += 1;
             #endif
 
-            // -------------------
-            // create visuals here
-            // Make new method ---
-            // -------------------
             CreateVisualComponents(spawnPos, Parameters.GetExplosiveDataByID(explosiveID)); // temporary, see method
 
             SetComponents(explosiveID, spawnPos, Parameters.GetExplosiveDataByID(explosiveID), ownerID);
@@ -53,34 +49,33 @@ namespace WDIB.Explosives
             #if UNITY_EDITOR
             if(data.particleEffect == null)
             {
-                //Debug.LogWarning($"{data.explosiveName}'s particle effect is null");
+                Debug.LogWarning($"{data.explosiveName}'s particle effect does not have a particle effect.", data);
                 return;
             }
             #endif
                
             GameObject tmpGO = GameObject.Instantiate(data.particleEffect, spawnPos, Quaternion.identity);
-            tmpGO.AddComponent<DestroyParticleOnComplete>();
+            tmpGO.AddComponent<DestroyOnComplete>();
         }
 
         private static void SetComponents(int explosiveID, float3 spawnPos, ExplosiveData data, uint ownerID)
         {
-            Entity templateEnt;
+            Entity entity;
 
-            // create the entity to clone from
-            templateEnt = EntityManager.CreateEntity(Archetype);
+            entity = EntityManager.CreateEntity(Archetype);
 
             #if UNITY_EDITOR
             if (debugGroupID > 65000)
             {
                 debugGroupID = 0;
             }
-            EntityManager.SetName(templateEnt, data.explosiveName + " Explosive " + debugGroupID);
+            EntityManager.SetName(entity, data.explosiveName + " Explosive " + debugGroupID);
             #endif
 
             //Generic Components
-            EntityManager.SetComponentData(templateEnt, new Translation { Value = spawnPos });
-            EntityManager.SetComponentData(templateEnt, new OwnerID { Value = ownerID });
-            EntityManager.SetComponentData(templateEnt, new Explosive { ID = explosiveID });
+            EntityManager.SetComponentData(entity, new Translation { Value = spawnPos });
+            EntityManager.SetComponentData(entity, new OwnerID { Value = ownerID });
+            EntityManager.SetComponentData(entity, new Explosive { ID = explosiveID });
         }
     }
 }

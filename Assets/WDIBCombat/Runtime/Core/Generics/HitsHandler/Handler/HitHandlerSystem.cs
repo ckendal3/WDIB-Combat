@@ -180,7 +180,6 @@ namespace WDIB.Utilities
         private static void CreateHitVisual(int visualsID, RaycastHit hit)
         {
             // Implement visual hit logic here
-            VisualHitParameters.Instance.GetHitVFXDataByType(visualsID, MaterialType.Dirt); // MaterialType.Dirt should be gathered from the hit
         }
 
         private static void AddExplosion(Entity entity, Vector3 hitPoint, uint ownerID)

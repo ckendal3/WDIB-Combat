@@ -1,6 +1,8 @@
 ﻿using Unity.Entities;
 using Unity.Mathematics;
 
+// TODO: Add overridable systems
+
 namespace WDIB.Components
 {
     /// <summary>
