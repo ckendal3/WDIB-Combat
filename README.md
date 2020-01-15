@@ -38,6 +38,7 @@ There are trello boards to follow:
 10. Implement batched raycasts
 11. Combined trello boards
 12. Remove NaughtyAttributes (a nice package but need to be independent)
+13. Implement Raycast ("hitscan") option for projectiles
 
 
 ### Known Issues (Not all listed)
