@@ -5,7 +5,8 @@ namespace WDIB.Parameters
     [CreateAssetMenu(fileName = "New Explosive", menuName = "WDIB/Data/Explosive")]
     public class ExplosiveData : ScriptableObject
     {
-        public string explosiveName = "Explosive";
+        [Tooltip("Name of the Explosive")]
+        public new string name = "Nameless Explosive";
 
         [Tooltip("The effective range of the explosive.")]
         [Range(1f, 20f)]
@@ -23,8 +24,8 @@ namespace WDIB.Parameters
         public AnimationCurve damageCurve;
 
         [Tooltip("The visual particle effect to display on hit.")]
-        public GameObject particleEffect; // don't want to use gameobject
+        public GameObject particleEffect;
 
-        //add components like ExplodeOnImpact, DelayedExplosion?
+        // TODO: Add components list
     }
 }

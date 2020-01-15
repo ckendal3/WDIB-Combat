@@ -3,7 +3,6 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using WDIB.Components;
-using UnityEngine;
 
 namespace WDIB.Weapons
 {
@@ -18,10 +17,10 @@ namespace WDIB.Weapons
         static WeaponParameters Parameters;
 
         // use for debugging
-#if UNITY_EDITOR
+        #if UNITY_EDITOR
         static int debugGroupID = 0;
         static int debugIndividualID = 0;
-#endif
+        #endif
 
         static WeaponFactory()
         {
@@ -52,14 +51,14 @@ namespace WDIB.Weapons
             // -------------------
 
 
-#if UNITY_EDITOR
+            #if UNITY_EDITOR
             if (debugGroupID > 65000)
             {
                 debugGroupID = 0;
             }
             debugGroupID += 1;
             debugIndividualID = 0;
-#endif
+            #endif
 
             Entity weaponEntity;
 
@@ -79,10 +78,10 @@ namespace WDIB.Weapons
         private static void SetComponents(Entity entity, int weaponID, float3 spawnPos, quaternion spawnRot, WeaponData data, uint ownerID, float muzzleOffset)
         {
             #region Template Weapon Entity
-#if UNITY_EDITOR
+            #if UNITY_EDITOR
             debugIndividualID += 1;
             EntityManager.SetName(entity, data.weaponName + " Weapon " + debugIndividualID + " - Group " + debugGroupID);
-#endif
+            #endif
 
             //Generic Components
             EntityManager.SetComponentData(entity, new Translation { Value = spawnPos });

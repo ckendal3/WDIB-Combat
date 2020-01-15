@@ -5,11 +5,12 @@ using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
 using WDIB.Components;
-using UnityEngine;
 using Random = Unity.Mathematics.Random;
 using Unity.Burst;
 using Unity.Jobs;
-using WDIB.Explosives;
+
+// TODO: Delete componentdata struct
+// TODO: Write IComponentDrawer
 
 namespace WDIB.Projectiles
 {
@@ -86,7 +87,7 @@ namespace WDIB.Projectiles
 
             #if UNITY_EDITOR
             debugIndividualID += 1;
-            EntityManager.SetName(templateEnt, data.projectileName + " Projectile " + debugIndividualID + " - Group " + debugGroupID);
+            EntityManager.SetName(templateEnt, data.name + " Projectile " + debugIndividualID + " - Group " + debugGroupID);
             #endif
 
             //Generic Components
@@ -104,12 +105,12 @@ namespace WDIB.Projectiles
             EntityManager.SetComponentData(templateEnt, new Projectile { ID = projectileID });
 
             // Add extra components specified in the projectile data
-            if (data.componentData != null && data.componentData.Length > 0)
+            if (data.components != null && data.components.Count > 0)
             {
-                int componentCount = data.componentData.Length;
-                for (int i = 0; i < componentCount; i++)
+                int count = data.components.Count;
+                for (int i = 0; i < count; i++)
                 {
-                    AddExtraComponentData(ref templateEnt, data.componentData[i]);
+                    EntityManager.AddComponentData(templateEnt, data.components[i]);
                 }
             }
             #endregion
@@ -134,10 +135,10 @@ namespace WDIB.Projectiles
                 for (int i = 1; i < projectileCount; i++)
                 {
                     #region Entity Debugging
-#if UNITY_EDITOR
+                    #if UNITY_EDITOR
                     debugIndividualID += 1;
-                    EntityManager.SetName(cloneEnts[i - 1], data.projectileName + " Projectile " + debugIndividualID + " - Group " + debugGroupID);
-#endif
+                    EntityManager.SetName(cloneEnts[i - 1], data.name + " Projectile " + debugIndividualID + " - Group " + debugGroupID);
+                    #endif
                     #endregion
 
                     // we subtract one because our cloned projectiles need to iterate starting at zero
@@ -184,41 +185,6 @@ namespace WDIB.Projectiles
                                    random.NextFloat(spreadAmounts.x, spreadAmounts.y));
 
                 spreads[index] = math.mul(baseRot, quaternion.Euler(deviation));
-            }
-        }
-
-
-        // TODO: DYNAMIC component data adding for all factories
-        /// <summary>
-        /// Retrieve the components specified in the data and add them to the projectiles
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <param name="data"></param>
-        private static void AddExtraComponentData(ref Entity entity, ComponentDataStruct data)
-        {
-            switch (data.componentType)
-            {
-                case EComponentType.HeadShot:
-                    EntityManager.AddComponentData(entity, (HeadShotMultiplier)data.GetComponentData());
-                    return;
-                case EComponentType.MultiHit:
-                    EntityManager.AddComponentData(entity, (MultiHit)data.GetComponentData());
-                    return;
-                case EComponentType.EMP:
-                    Debug.LogWarning("EMP is not yet implemented.");
-                    return;
-                case EComponentType.SuperCombine:
-                    EntityManager.AddComponentData(entity, (SuperCombine)data.GetComponentData());
-                    return;
-                case EComponentType.Tracking:
-                    EntityManager.AddComponentData(entity, (TrackPlayer)data.GetComponentData());
-                    return;
-                case EComponentType.Explosive:
-                    EntityManager.AddComponentData(entity, (Explosive)data.GetComponentData());
-                    return;
-                case EComponentType.NotImplemented:
-                    Debug.Log("Not yet immplemented.");
-                    return;
             }
         }
     }

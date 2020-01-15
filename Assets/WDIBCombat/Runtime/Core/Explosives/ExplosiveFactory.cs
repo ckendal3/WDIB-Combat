@@ -49,7 +49,7 @@ namespace WDIB.Explosives
             #if UNITY_EDITOR
             if(data.particleEffect == null)
             {
-                Debug.LogWarning($"{data.explosiveName}'s particle effect does not have a particle effect.", data);
+                Debug.LogWarning($"{data.name}'s particle effect does not have a particle effect.", data);
                 return;
             }
             #endif
@@ -69,7 +69,7 @@ namespace WDIB.Explosives
             {
                 debugGroupID = 0;
             }
-            EntityManager.SetName(entity, data.explosiveName + " Explosive " + debugGroupID);
+            EntityManager.SetName(entity, data.name + " Explosive " + debugGroupID);
             #endif
 
             //Generic Components

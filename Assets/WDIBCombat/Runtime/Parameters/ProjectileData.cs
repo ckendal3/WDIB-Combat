@@ -1,9 +1,7 @@
-﻿using Unity.Entities;
-using UnityEditor;
+﻿using System.Collections.Generic;
+using Unity.Entities;
 using UnityEngine;
 using WDIB.Components;
-using WDIB.Explosives;
-using WDIB.Projectiles;
 
 namespace WDIB.Parameters
 {
@@ -11,24 +9,26 @@ namespace WDIB.Parameters
     public class ProjectileData : ScriptableObject
     {
         [Header("Main Data")]
-        [Tooltip("Name of the Projectiles")]
-        public string projectileName = "Default";
+        [Tooltip("Name of the Projectile.")]
+        public new string name = "Nameless Projectile";
 
-        // How many projectile to spawn per a shot
+        [Tooltip("The amount of projectiles to spawn per a shot.")]
         [Range(1, 25)]
         public int projectilesPerAShot = 1;
 
-        // How far before the projectile should destroy
+        [Tooltip("The distance the projectile will be alive.")]
         [Range(1f, 1000f)]
         public float maxDistance = 1000f;
 
+        [Tooltip("The base amount of damage.")]
         [Range(0f, 500f)]
         public float damage = 10f;
 
-        // how many units should the projectile move a second
+        [Tooltip("Rate of speed of a projectile (m/s)")]
         [Range(1f, 1000f)]
         public float speed = 10f;
 
+        [Tooltip("The amount of spread per a projectile per a shot.")]
         public PelletSpread spread = default;
 
         // Visual settings
@@ -36,16 +36,28 @@ namespace WDIB.Parameters
         public Mesh mesh;
         public Material material;
 
+        [Tooltip("The length of the projectile visual.")]
         [Range(.01f, 10)]
         public float length = 1.0f;
 
         [Header("System Components")]
+        [Tooltip("The components that this projectile has.")]
+        [SerializeReference] public List<IComponentData> components;
 
-        [NaughtyAttributes.ReorderableList]
-        public ComponentDataStruct[] componentData;
+        private void OnEnable()
+        {
+            if(components == null || components.Count < 0)
+            {
+                components = new List<IComponentData>();
+                components.Add(new LifeTime { Value = 15f });
+                components.Add(new Health { Value = 15f, MaxValue = 15f });
+                components.Add(new Damage { Value = 15f});
+            }
+        }
     }
 }
 
+//TODO: Write a property drawer for pelletspread <- Should probably be a component
 [System.Serializable]
 public struct PelletSpread
 {
@@ -54,62 +66,4 @@ public struct PelletSpread
 
     [Range(0, .35f)]
     public float maximumSpread;
-}
-
-//TODO: Write a property drawer for pelletspread
-
-[System.Serializable]
-public struct ComponentDataStruct : IGetComponent
-{
-    public EComponentType componentType;
-
-    public float floatValue;
-    public int intValue;
-
-    public EComponentType GetComponentType()
-    {
-        return componentType;
-    }
-
-    public IComponentData GetComponentData()
-    {
-        switch (componentType)
-        {
-            case EComponentType.HeadShot:
-                return new HeadShotMultiplier { Value = floatValue };
-            case EComponentType.MultiHit:
-                return new MultiHit { Hits = 0, MaxHits = intValue };
-            case EComponentType.EMP:
-                Debug.LogWarning("EMP is not implemented.");
-                return null;
-            case EComponentType.SuperCombine:
-                return new SuperCombine { Hits = 0, HitsToCombine = intValue };
-            case EComponentType.Tracking:
-                return new TrackPlayer { ID = (uint) intValue };
-            case EComponentType.Explosive:
-                return new Explosive { ID = intValue };
-            case EComponentType.NotImplemented:
-                return null;
-            default:
-                return null;
-        }
-    }
-}
-
-public interface IGetComponent
-{
-    EComponentType GetComponentType();
-
-    IComponentData GetComponentData();
-}
-
-public enum EComponentType
-{
-    HeadShot,
-    MultiHit,
-    EMP,
-    SuperCombine,
-    Tracking,
-    Explosive,
-    NotImplemented
 }
