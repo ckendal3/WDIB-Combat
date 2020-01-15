@@ -55,7 +55,6 @@ namespace WDIB.Explosives
             #endif
                
             GameObject tmpGO = GameObject.Instantiate(data.particleEffect, spawnPos, Quaternion.identity);
-            tmpGO.AddComponent<DestroyOnComplete>();
         }
 
         private static void SetComponents(int explosiveID, float3 spawnPos, ExplosiveData data, uint ownerID)

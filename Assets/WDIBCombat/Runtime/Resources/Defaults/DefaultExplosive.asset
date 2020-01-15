@@ -40,5 +40,5 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  particleEffect: {fileID: 1074519772002704, guid: 03420f486faf89349bd4843219ebd0d4,
+  particleEffect: {fileID: 2695174714312214417, guid: 1a977254ee4d70a4c84e8f94e5ad53db,
     type: 3}

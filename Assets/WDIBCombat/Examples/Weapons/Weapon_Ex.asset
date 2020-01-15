@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d98b3e85b28be41469f9dd1d04d51d2f, type: 3}
-  m_Name: DefaultWeapon
+  m_Name: Weapon_Ex
   m_EditorClassIdentifier: 
   weaponName: Default
   projectileId: 0
-  firingType: 1
+  firingType: 0
   timeBetweenShots: 2.61
   timeBetweenBurstRounds: 0.73
   burstAmount: 3

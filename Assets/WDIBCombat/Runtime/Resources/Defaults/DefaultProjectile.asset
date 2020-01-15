@@ -21,7 +21,6 @@ MonoBehaviour:
     minimumSpread: -0.177
     maximumSpread: 0.177
   mesh: {fileID: 2298794039524342105, guid: 98401a8b6f876ed4ebdd395ad4cfccaf, type: 3}
-  material: {fileID: 5629084884208175553, guid: 98401a8b6f876ed4ebdd395ad4cfccaf,
-    type: 3}
+  material: {fileID: 2100000, guid: 943553cc5add5d441b85589e4a00c401, type: 2}
   length: 1
   componentData: []

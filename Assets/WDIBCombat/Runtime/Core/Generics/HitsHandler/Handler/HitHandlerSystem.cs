@@ -21,7 +21,7 @@ namespace WDIB.Utilities
         private static EntityManager EntityManager;
         private static WeaponParameters Parameters;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Initialize()
         {
             EntityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
@@ -43,8 +43,14 @@ namespace WDIB.Utilities
 
             float damage = EntityManager.GetComponentData<Damage>(handlerData.Entity).Value;
             uint ownerID = EntityManager.GetComponentData<OwnerID>(handlerData.Entity).Value;
+            bool canExplode = EntityManager.HasComponent<Explosive>(handlerData.Entity);
 
             TryToApplyDamage(damage, ownerID, hit.collider);
+
+            if (canExplode)
+            {
+                AddExplosion(handlerData.Entity, hit.point, ownerID);
+            }
 
             TryToApplyForce(damage, hit.collider, ForceType.Force);
             CreateHitVisual();

@@ -24,11 +24,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   explosiveSet:
-  - {fileID: 11400000, guid: 414294173d7aee94c84fc8857465ac52, type: 2}
-  - {fileID: 11400000, guid: fe6827e24b63c6d4eb8aba8a7da033d3, type: 2}
+  - {fileID: 11400000, guid: e3270684775b4214a9c2f1b98b0faba1, type: 2}
   explosiveHitLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  defaultWeapon: {fileID: 11400000, guid: e36df618cc73608429a416d7dcbc2d1a, type: 2}
+  defaultWeapon: {fileID: 11400000, guid: aa64c51e673ff7744a33a9e669694cf4, type: 2}
   defaultExplosive: {fileID: 11400000, guid: 414294173d7aee94c84fc8857465ac52, type: 2}
   defaultProjectile: {fileID: 11400000, guid: 1cb3857cd4bd6794188a280c912612a5, type: 2}

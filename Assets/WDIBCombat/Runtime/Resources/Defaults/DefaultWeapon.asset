@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d98b3e85b28be41469f9dd1d04d51d2f, type: 3}
   m_Name: DefaultWeapon
   m_EditorClassIdentifier: 
-  weaponName: Default
+  weaponName: DefaultWeapon
   projectileId: 0
   firingType: 2
   timeBetweenShots: 0.5

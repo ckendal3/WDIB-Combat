@@ -23,7 +23,4 @@ MonoBehaviour:
   mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   material: {fileID: 2100000, guid: 943553cc5add5d441b85589e4a00c401, type: 2}
   length: 0.01
-  componentData:
-  - componentType: 5
-    floatValue: 1
-    intValue: 0
+  componentData: []
