@@ -1,5 +1,5 @@
 # WDIBCombat
-Multi-threaded combat system.
+Multi-threaded combat system created by Christian Kendall (GingerKendall) @WDIBStudios.
 
 ## Prologue
 Thanks for taking a look at this! 
